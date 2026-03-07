@@ -1,0 +1,31 @@
+{
+  "bookings": [
+    {
+      "ref": "VX484447",
+      "patientName": "pavi",
+      "problem": "stomach pain",
+      "doctorId": "DOC007",
+      "doctorName": "Dr. Vikram Singh",
+      "specialty": "Gastroenterologist",
+      "date": "this monday",
+      "time": "10:00 AM",
+      "fee": 900,
+      "status": "confirmed",
+      "bookedAt": "2026-03-07T15:53:44.683Z"
+    },
+    {
+      "ref": "VX160171",
+      "patientName": "book appointment",
+      "patientPhone": "919036287921",
+      "problem": "i am sonu i am suffering from fever",
+      "doctorId": "DOC001",
+      "doctorName": "Dr. Arvind Sharma",
+      "specialty": "General Physician",
+      "date": "this monday",
+      "time": "10:00 AM",
+      "fee": 500,
+      "status": "confirmed",
+      "bookedAt": "2026-03-07T16:00:01.405Z"
+    }
+  ]
+}

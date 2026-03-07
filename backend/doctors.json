@@ -1,0 +1,147 @@
+{
+  "hospital": {
+    "name": "VoxOps MediCare Hospital",
+    "city": "Bangalore",
+    "address": "123, MG Road, Bangalore - 560001",
+    "contact": "+91-80-1234-5678",
+    "email": "care@voxopsmedicare.com",
+    "working_hours": "Mon-Sat: 8:00 AM - 8:00 PM | Sun: 9:00 AM - 2:00 PM"
+  },
+  "doctors": [
+    {
+      "id": "DOC001",
+      "name": "Dr. Arvind Sharma",
+      "specialty": "General Physician",
+      "qualification": "MBBS, MD",
+      "experience": "15 years",
+      "contact": "+91-98100-11111",
+      "conditions": ["fever","cold","cough","fatigue","general","checkup","body pain","headache","weakness","flu","viral"],
+      "available_days": ["monday","tuesday","wednesday","thursday","friday","saturday"],
+      "slots": {
+        "monday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "tuesday":   ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "thursday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "friday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
+      },
+      "fee": 500
+    },
+    {
+      "id": "DOC002",
+      "name": "Dr. Rajesh Mehta",
+      "specialty": "Cardiologist",
+      "qualification": "MBBS, MD, DM (Cardiology)",
+      "experience": "20 years",
+      "contact": "+91-98100-22222",
+      "conditions": ["heart","chest pain","blood pressure","bp","palpitations","cardiac","shortness of breath","cholesterol"],
+      "available_days": ["monday","wednesday","friday"],
+      "slots": {
+        "monday":    ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],
+        "wednesday": ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],
+        "friday":    ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"]
+      },
+      "fee": 1200
+    },
+    {
+      "id": "DOC003",
+      "name": "Dr. Priya Kapoor",
+      "specialty": "Dermatologist",
+      "qualification": "MBBS, MD (Dermatology)",
+      "experience": "12 years",
+      "contact": "+91-98100-33333",
+      "conditions": ["skin","rash","acne","allergy","itching","eczema","hair loss","psoriasis","fungal","pigmentation"],
+      "available_days": ["tuesday","thursday","saturday"],
+      "slots": {
+        "tuesday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],
+        "thursday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],
+        "saturday": ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
+      },
+      "fee": 800
+    },
+    {
+      "id": "DOC004",
+      "name": "Dr. Suresh Verma",
+      "specialty": "Orthopedic Surgeon",
+      "qualification": "MBBS, MS (Ortho)",
+      "experience": "18 years",
+      "contact": "+91-98100-44444",
+      "conditions": ["bone","joint","knee","back pain","spine","fracture","shoulder","arthritis","sports injury","slip disc"],
+      "available_days": ["monday","tuesday","thursday","friday"],
+      "slots": {
+        "monday":   ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "tuesday":  ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "thursday": ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
+        "friday":   ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"]
+      },
+      "fee": 1000
+    },
+    {
+      "id": "DOC005",
+      "name": "Dr. Kavitha Rao",
+      "specialty": "ENT Specialist",
+      "qualification": "MBBS, MS (ENT)",
+      "experience": "10 years",
+      "contact": "+91-98100-55555",
+      "conditions": ["ear","nose","throat","sinus","hearing","tonsil","snoring","nasal","adenoid","vertigo"],
+      "available_days": ["monday","wednesday","friday","saturday"],
+      "slots": {
+        "monday":    ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
+        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
+        "friday":    ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
+        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
+      },
+      "fee": 700
+    },
+    {
+      "id": "DOC006",
+      "name": "Dr. Anil Gupta",
+      "specialty": "Neurologist",
+      "qualification": "MBBS, MD, DM (Neurology)",
+      "experience": "22 years",
+      "contact": "+91-98100-66666",
+      "conditions": ["migraine","headache","nerve","seizure","memory","dizziness","brain","epilepsy","stroke","parkinson","numbness"],
+      "available_days": ["tuesday","thursday"],
+      "slots": {
+        "tuesday":  ["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "thursday": ["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"]
+      },
+      "fee": 1500
+    },
+    {
+      "id": "DOC007",
+      "name": "Dr. Vikram Singh",
+      "specialty": "Gastroenterologist",
+      "qualification": "MBBS, MD, DM (Gastro)",
+      "experience": "14 years",
+      "contact": "+91-98100-77777",
+      "conditions": ["stomach","digestion","acidity","ibs","liver","constipation","nausea","vomiting","gastric","ulcer","bloating"],
+      "available_days": ["monday","wednesday","friday"],
+      "slots": {
+        "monday":    ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],
+        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],
+        "friday":    ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"]
+      },
+      "fee": 900
+    },
+    {
+      "id": "DOC008",
+      "name": "Dr. Sunita Patel",
+      "specialty": "Pediatrician",
+      "qualification": "MBBS, MD (Pediatrics)",
+      "experience": "16 years",
+      "contact": "+91-98100-88888",
+      "conditions": ["child","baby","infant","kids","vaccination","growth","pediatric","newborn","fever child","child cough"],
+      "available_days": ["monday","tuesday","wednesday","thursday","friday","saturday"],
+      "slots": {
+        "monday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "tuesday":   ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "thursday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "friday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
+        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
+      },
+      "fee": 600
+    }
+  ]
+}
