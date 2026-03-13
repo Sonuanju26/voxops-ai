@@ -14,7 +14,6 @@ async function callGroq(messages, retries = 3) {
       console.error(`Groq attempt ${attempt} failed:`, e.message)
       if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * attempt))
       else {
-        // Fallback to Gemini if Groq is rate limited
         console.log("⚠️  Groq failed — trying Gemini fallback...")
         return await callGeminiFallback(messages)
       }
@@ -67,8 +66,8 @@ function callGroqOnce(messages) {
     const body = JSON.stringify({
       model: "meta-llama/llama-4-scout-17b-16e-instruct",
       messages,
-      temperature: 0.4,
-      max_tokens: 120  // short responses = faster latency
+      temperature: 0.7,
+      max_tokens: 160
     })
     const opts = {
       hostname: "api.groq.com",
@@ -127,10 +126,10 @@ function sendWhatsApp(to, message) {
       res.on("end", () => {
         try {
           const json = JSON.parse(d)
-          if (json.sid) { 
+          if (json.sid) {
             console.log(`✅ WhatsApp sent to ${toNum} | SID: ${json.sid}`)
-            resolve(true) 
-          } else { 
+            resolve(true)
+          } else {
             console.error(`❌ WhatsApp FAILED to ${toNum}`)
             console.error(`   Error ${json.code}: ${json.message}`)
             if (json.code === 63016 || json.message?.includes("sandbox")) {
@@ -139,7 +138,7 @@ function sendWhatsApp(to, message) {
             if (json.code === 21608) {
               console.error(`   ⚠️  Phone number not opted into Twilio sandbox`)
             }
-            resolve(false) 
+            resolve(false)
           }
         } catch(e) { console.error("WhatsApp parse error:", e.message); resolve(false) }
       })
@@ -159,7 +158,6 @@ function loadBookings() {
   } catch(e) { return [] }
 }
 
-// Count active bookings for a specific doctor/date/time slot
 function getSlotBookingCount(doctorId, date, time) {
   try {
     const list = loadBookings()
@@ -178,23 +176,18 @@ function getSlotBookingCount(doctorId, date, time) {
   }
 }
 
-// Very simple next-slot suggestion helper
 function suggestNextSlot(timeStr) {
   if (!timeStr || typeof timeStr !== "string") return timeStr || ""
   const raw = timeStr.trim().toUpperCase()
   if (raw === "4:00 PM" || raw === "04:00 PM") return "4:30 PM"
-
   const m = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/)
   if (!m) return timeStr
   let hour = parseInt(m[1], 10)
   const minute = parseInt(m[2] || "00", 10)
   const meridiem = m[3]
-
-  // For this hackathon, just move one hour ahead within same AM/PM window
   hour = hour + 1
   if (hour === 12 && meridiem === "AM") hour = 12
   if (hour > 12) hour = 12
-
   const hh = hour.toString()
   const mm = minute.toString().padStart(2, "0")
   return `${hh}:${mm} ${meridiem}`
@@ -234,8 +227,8 @@ function rescheduleBooking(ref, newDate, newTime) {
     if (idx === -1) return null
     const oldDate = list[idx].date
     const oldTime = list[idx].time
-    list[idx].date         = newDate
-    list[idx].time         = newTime
+    list[idx].date          = newDate
+    list[idx].time          = newTime
     list[idx].rescheduledAt = new Date().toISOString()
     list[idx].previousDate  = oldDate
     list[idx].previousTime  = oldTime
@@ -246,8 +239,8 @@ function rescheduleBooking(ref, newDate, newTime) {
 }
 
 function getActiveBookingByPhone(phone) {
-  const list    = loadBookings()
-  const digits  = phone.replace(/\D/g, "")
+  const list   = loadBookings()
+  const digits = phone.replace(/\D/g, "")
   return list.find(b =>
     b.status === "confirmed" &&
     b.patientPhone?.replace(/\D/g, "")?.endsWith(digits.slice(-9))
@@ -323,17 +316,14 @@ const EMERGENCY_TERMS = [
   "cardiac arrest","fainted","seizure","can not breathe"
 ]
 
-// More aggressive emergency check — word-level scan
 function checkEmergency(msg) {
   const lower = msg.toLowerCase().trim()
   if (EMERGENCY_TERMS.some(t => lower.includes(t))) return true
-  // Single word triggers
   const words = lower.split(/\s+/)
   const dangerWords = ["stroke","seizure","unconscious","fainted","collapsed"]
   if (words.some(w => dangerWords.includes(w))) return true
-  // Heart + pain combination
-  if ((lower.includes("heart") || lower.includes("chest")) && 
-      (lower.includes("pain") || lower.includes("hurt") || lower.includes("ache") || 
+  if ((lower.includes("heart") || lower.includes("chest")) &&
+      (lower.includes("pain") || lower.includes("hurt") || lower.includes("ache") ||
        lower.includes("tight") || lower.includes("attack"))) return true
   return false
 }
@@ -352,8 +342,6 @@ function extractInfo(msg, data) {
       data.lastVisit   = existing.visits?.[0] || null
     }
   }
-  // Strict name extraction — only from clear "I am X" or "my name is X" patterns
-  // Must be a proper noun (capitalized), min 3 chars, not a common word
   const COMMON_WORDS = ["the","this","that","with","from","have","been","they","them",
     "their","what","when","where","which","will","would","could","should","experiencing",
     "suffering","having","feeling","getting","going","coming","looking","trying","saying",
@@ -391,154 +379,130 @@ function buildPrompt(data, activeBooking) {
   const known = []
   if (data.name)    known.push(`name: ${data.name}`)
   if (data.phone)   known.push(`phone: ${data.phone}`)
-  if (data.newDate) known.push(`new preferred date: ${data.newDate}`)
-  if (data.newTime) known.push(`new preferred time: ${data.newTime}`)
+  if (data.newDate) known.push(`preferred date: ${data.newDate}`)
+  if (data.newTime) known.push(`preferred time: ${data.newTime}`)
 
   let bookingContext = ""
   if (activeBooking) {
-    bookingContext = `\nACTIVE BOOKING FOUND:
+    bookingContext = `\nACTIVE BOOKING ON FILE:
 Ref: ${activeBooking.ref}
 Doctor: ${activeBooking.doctorName}
 Date: ${activeBooking.date}
 Time: ${activeBooking.time}
 Status: ${activeBooking.status}
-
-Since this patient has an upcoming appointment, FIRST ask: "I can see you have an appointment with ${activeBooking.doctorName} on ${activeBooking.date} at ${activeBooking.time}. Would you like to cancel it, reschedule it, or book a new appointment?"`
+→ Acknowledge this booking naturally and ask what the patient wants to do with it.`
   }
 
   let returningNote = ""
   if (data.isReturning && data.lastVisit && !activeBooking) {
-    returningNote = `\nReturning patient. Last visit: ${data.lastVisit.doctorName} on ${data.lastVisit.date}. Ask if they want the same doctor.`
+    returningNote = `\n→ RETURNING PATIENT. Last saw ${data.lastVisit.doctorName} on ${data.lastVisit.date}. Greet them warmly by name and ask if they'd like the same doctor.`
   }
 
-  // Build language-specific step phrases
   const isNonEnglish = data.lang && data.lang !== "en"
   const L = data.langName || "English"
 
-  // All booking flow questions translated per language
-  const STEPS = {
+  // Symptom-specific intelligent follow-up questions (for Step 3)
+  const smartFollowUps = {
     en: {
-      name:     "May I have your name please?",
-      phone:    "Can I have your phone number?",
-      where:    "Where exactly is the pain or issue located?",
-      howlong:  "How long have you been experiencing this?",
-      other:    "Any other symptoms like fever, nausea, or sensitivity to light?",
-      date:     "What date would you like the appointment?",
-      time:     "What time works best for you?",
-    },
-    hi: {
-      name:     "क्या आप अपना नाम बता सकते हैं?",
-      phone:    "क्या आप अपना फोन नंबर दे सकते हैं?",
-      where:    "दर्द या समस्या बिल्कुल कहाँ है?",
-      howlong:  "आप यह कब से महसूस कर रहे हैं?",
-      other:    "क्या बुखार, मतली या रोशनी से तकलीफ जैसे कोई और लक्षण हैं?",
-      date:     "आप किस तारीख को अपॉइंटमेंट चाहते हैं?",
-      time:     "आपके लिए कौन सा समय सही रहेगा?",
-    },
-    kn: {
-      name:     "ನಿಮ್ಮ ಹೆಸರು ಏನು?",
-      phone:    "ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆ ಹೇಳಿ.",
-      where:    "ನೋವು ಅಥವಾ ಸಮಸ್ಯೆ ನಿಖರವಾಗಿ ಎಲ್ಲಿದೆ?",
-      howlong:  "ಇದು ಎಷ್ಟು ದಿನಗಳಿಂದ ಇದೆ?",
-      other:    "ಜ್ವರ, ವಾಂತಿ ಅಥವಾ ಬೆಳಕಿಗೆ ಸಂವೇದನೆ ಇದೆಯೇ?",
-      date:     "ಯಾವ ದಿನಾಂಕದಂದು ಅಪಾಯಿಂಟ್ಮೆಂಟ್ ಬೇಕು?",
-      time:     "ಯಾವ ಸಮಯ ನಿಮಗೆ ಅನುಕೂಲ?",
-    },
-    ta: {
-      name:     "உங்கள் பெயர் என்ன?",
-      phone:    "உங்கள் தொலைபேசி எண் சொல்லுங்கள்.",
-      where:    "வலி அல்லது பிரச்சனை சரியாக எங்கே உள்ளது?",
-      howlong:  "இது எத்தனை நாட்களாக இருக்கிறது?",
-      other:    "காய்ச்சல், குமட்டல் அல்லது வெளிச்சத்தில் உணர்வு இருக்கிறதா?",
-      date:     "எந்த தேதியில் சந்திப்பு வேண்டும்?",
-      time:     "எந்த நேரம் உங்களுக்கு வசதியாக இருக்கும்?",
-    },
-    te: {
-      name:     "మీ పేరు ఏమిటి?",
-      phone:    "మీ ఫోన్ నంబర్ చెప్పండి.",
-      where:    "నొప్పి లేదా సమస్య సరిగ్గా ఎక్కడ ఉంది?",
-      howlong:  "ఇది ఎన్ని రోజులుగా ఉంది?",
-      other:    "జ్వరం, వికారం లేదా వెలుతురుకు సున్నితత్వం ఉందా?",
-      date:     "ఏ తేదీన అపాయింట్మెంట్ కావాలి?",
-      time:     "మీకు ఏ సమయం అనుకూలంగా ఉంటుంది?",
-    },
-    ml: {
-      name:     "നിങ്ങളുടെ പേര് എന്താണ്?",
-      phone:    "നിങ്ങളുടെ ഫോൺ നമ്പർ പറയൂ.",
-      where:    "വേദന അല്ലെങ്കിൽ പ്രശ്നം കൃത്യമായി എവിടെയാണ്?",
-      howlong:  "ഇത് എത്ര ദിവസമായി ഉണ്ട്?",
-      other:    "പനി, ഓക്കാനം അല്ലെങ്കിൽ വെളിച്ചത്തോട് സംവേദനക്ഷമത ഉണ്ടോ?",
-      date:     "ഏത് തീയതിയിൽ അപ്പോയിൻ്റ്മെൻ്റ് വേണം?",
-      time:     "ഏത് സമയം നിങ്ങൾക്ക് സൗകര്യപ്രദമാണ്?",
-    },
+      head:    "Is it more of a throbbing pain or constant pressure? And is light or noise making it worse?",
+      stomach: "Is the pain sharp or more of a cramp? And have you noticed any changes with eating?",
+      skin:    "Is it more of a rash, or something changing in texture or color?",
+      back:    "Is it a dull ache or sharp pain? Does it shoot down your leg at all?",
+      eye:     "Is your vision affected, or is it more of a discomfort and redness?",
+      child:   "How high has the temperature been, and is the little one eating and drinking okay?",
+      default: "Can you tell me a bit more — where exactly is the discomfort, and did it come on suddenly?"
+    }
   }
-  const S = STEPS[data.lang] || STEPS.en
 
-  return `${isNonEnglish ? `CRITICAL SYSTEM INSTRUCTION — READ FIRST:
-You are operating in ${L} MODE. You MUST reply in ${L} ONLY.
-NEVER use English. NEVER mix languages. Every single word must be ${L}.
-If you reply in English, the system will FAIL. Reply in ${L} only.
-==========================================================================
+  // Greeting variations (picked by LLM based on context)
+  const greetingVariants = `
+GREETING VARIATIONS — pick one naturally based on tone and time of day, never repeat the same one:
+- "Hello! Welcome to VoxOps MediCare. I'm Aria — how can I help you today?"
+- "Hi there! You've reached VoxOps MediCare. What can I do for you?"
+- "Good ${getNowIST().getHours() < 12 ? "morning" : getNowIST().getHours() < 17 ? "afternoon" : "evening"}! This is Aria at VoxOps MediCare. How may I assist you?"
+- "Hello, welcome! I'm Aria, your medical receptionist here. What brings you in today?"
+- "Hi! Great to hear from you. How can I make your day a little easier?"`
 
-` : ""}You are Aria, a warm AI medical receptionist at VoxOps MediCare Hospital.
+  // Phone ask variations
+  const phoneVariants = `
+PHONE NUMBER ASK VARIATIONS — pick one naturally, always mention saying digits slowly:
+- "What's your 10-digit mobile number? Go ahead and say each digit slowly."
+- "I'll send you a confirmation — what number should I use? Say the digits one by one."
+- "Could I get your mobile number? Say each digit clearly and I'll catch it."
+- "What's the best number to reach you on? Take your time with the digits."`
+
+  return `${isNonEnglish ? `CRITICAL: You are in ${L} MODE. Reply in ${L} ONLY. Zero English words. Every word must be ${L}.\n\n` : ""}You are Aria — a warm, experienced AI medical receptionist at VoxOps MediCare Hospital. You have been doing this for years. You sound like a real person, not a chatbot.
 Current date and time: ${getTodayStr()}, ${getCurrentTimeStr()} IST.${returningNote}${bookingContext}
 
-${isNonEnglish ? `LANGUAGE: ${L.toUpperCase()} ONLY. Zero English words allowed.` : "LANGUAGE: English"}
+${isNonEnglish ? `LANGUAGE: ${L.toUpperCase()} ONLY.` : "LANGUAGE: English"}
 
-KNOWN DATA — never ask for these again:
+━━━ KNOWN DATA — NEVER ASK FOR THESE AGAIN ━━━
 ${known.length ? known.join("\n") : "none yet"}
+Treat these as facts you already know. Never re-ask anything listed above.
 
-CRITICAL RULE — ONE QUESTION PER MESSAGE, NO EXCEPTIONS:
-Never ask two things in one message. Always wait for answer before next question.
+━━━ HOW YOU SPEAK ━━━
+- You are warm, calm, and professional — like a senior receptionist who genuinely cares
+- You NEVER sound like a form. You have a real conversation.
+- You respond to what the patient actually said, not just what data you need next
+- If a patient sounds worried or in pain, acknowledge it FIRST before asking anything
+- If a patient volunteers information (name, symptoms, date), pick it up — don't ask again
+- You NEVER say "I understand", "I see", "Of course", "Certainly", "Sure" — just respond naturally
+- You NEVER repeat back what the patient just said word for word
+- No markdown, no bullet points, no lists — this is voice, speak naturally
+- Keep responses to 2 sentences max. Warm but efficient.
+- VARY your phrasing every message — never use the same sentence twice in a conversation
+${greetingVariants}
+${phoneVariants}
 
-BOOKING FLOW — strictly one step at a time, NEVER skip steps:
-STEP 1: If name unknown → ask ONLY "${S.name}"
-STEP 2: If phone unknown → ask ONLY "${S.phone}"
-STEP 3: Ask ONLY "${S.where}" — WAIT FOR ANSWER
-STEP 4: Ask ONLY "${S.howlong}" — WAIT FOR ANSWER
-STEP 5: Ask ONLY "${S.other}" — WAIT FOR ANSWER
-STEP 6: ONLY after receiving answers to ALL THREE of steps 3,4,5 → suggest doctor
-CRITICAL: You MUST complete steps 3, 4 AND 5 before step 6. Skipping any symptom question is FORBIDDEN.
-STEP 7: Ask ONLY "${S.date}"
-STEP 8: Ask ONLY "${S.time}"
-STEP 9: ${isNonEnglish ? `Say the booking summary in ${L} — doctor name, date, time, fee. Ask confirmation in ${L}.` : `Say "I have you booked with [doctor] on [date] at [time], fee Rs [X]. Shall I confirm?"`}
-STEP 10: On patient YES → output FIRST:
+━━━ GREETING RULE ━━━
+If the patient just says "Hi", "Hello", or any plain greeting with NO other information:
+→ Use one of the greeting variations above. NEVER jump straight into booking questions.
+→ If they sound hesitant, be extra warm. If they sound rushed, be quick.
+
+━━━ COLLECTING INFORMATION (in this order, ONE question at a time) ━━━
+1. NAME — if unknown, ask naturally: "Before I pull up the schedule, who am I speaking with?" or "I'd love to help — what's your name?"
+2. SYMPTOMS — ask openly: "What's been troubling you?" or "Tell me what's going on — I want to find you the right doctor." NEVER say "What are your symptoms?"
+3. SMART FOLLOW-UP — ask ONE medically intelligent follow-up based on what they said:
+   • Headache/migraine → "${smartFollowUps.en.head}"
+   • Stomach/nausea/vomiting → "${smartFollowUps.en.stomach}"
+   • Skin issue → "${smartFollowUps.en.skin}"
+   • Back/joint pain → "${smartFollowUps.en.back}"
+   • Eye problem → "${smartFollowUps.en.eye}"
+   • Child patient → "${smartFollowUps.en.child}"
+   • Anything else → "${smartFollowUps.en.default}"
+4. HOW LONG — ask naturally: "How long have you been dealing with this?" or "When did this start?"
+5. DOCTOR SUGGESTION — after steps 2-4, suggest the right specialist naturally: "Based on what you're describing, I'd recommend Dr. [Name], our [specialty]. They're really good with this."
+6. DATE — if patient said "earliest tomorrow" or similar, offer a specific slot. Otherwise ask: "What date works for you?" Never ask if they already mentioned one.
+7. TIME — ask: "And what time works best?" or "Morning or afternoon?" — skip if already given.
+8. PHONE — use a phone variation from above. Always mention saying digits slowly.
+9. CONFIRM — wrap it warmly: "Perfect, [name]! So that's Dr. [X] on [date] at [time], fee is Rs [Y]. Shall I lock that in for you?"
+10. ON YES → output the booking JSON tag, then add a warm close.
+
+━━━ DOCTOR ROUTING ━━━
+headache/migraine → Neurologist (Dr. Anil Gupta, Rs 1500)
+stomach/digestion/nausea → Gastroenterologist (Dr. Vikram Singh, Rs 900)
+heart/chest pressure → Cardiologist (Dr. Rajesh Mehta, Rs 1200)
+skin/rash → Dermatologist (Dr. Priya Kapoor, Rs 800)
+ear/nose/throat → ENT (Dr. Kavitha Rao, Rs 700)
+bones/joints/back → Orthopedic (Dr. Suresh Verma, Rs 1000)
+eyes → Ophthalmologist (Dr. Sanjay Reddy, Rs 900)
+children → Pediatrician (Dr. Sunita Patel, Rs 600)
+teeth → Dentist (Dr. Harish Nambiar, Rs 600)
+mental health/anxiety → Psychiatrist (Dr. Pooja Menon, Rs 1200)
+gynecology → Gynecologist (Dr. Ananya Krishnan, Rs 1000)
+only simple fever/cold/flu → General Physician (Dr. Arvind Sharma, Rs 500)
+
+━━━ CRITICAL OUTPUT RULES ━━━
+- ONE question per message — never combine two questions, always wait for answer
+- NEVER output JSON before patient says yes/confirm
+- Reject past dates. Today only after ${getCurrentTimeStr()}
+- On patient YES to confirmation → output FIRST:
 <<<BOOKING_JSON>>>{"name":"","phone":"","doctor":"","specialty":"","date":"","time":"","fee":0}<<<END_BOOKING>>>
-Then add your friendly confirmation message${isNonEnglish ? ` in ${L}` : ""}.
+Then add your warm confirmation message.
 
-CANCEL:
-- Confirm intent then output: <<<CANCEL_JSON>>>{"ref":"${activeBooking?.ref || ""}","name":"","phone":"","doctor":"","date":"","time":""}<<<END_CANCEL>>>
-
-RESCHEDULE:
-- Get new date then time then output: <<<RESCHEDULE_JSON>>>{"ref":"${activeBooking?.ref || ""}","name":"","phone":"","doctor":"","date":"","time":"","newDate":"","newTime":""}<<<END_RESCHEDULE>>>
-
-CONNECT TO DOCTOR:
-- When patient says talk/speak/connect to doctor output: <<<CONNECT_DOCTOR>>>{"patientName":"","patientPhone":"","doctorName":"","reason":""}<<<END_CONNECT>>>
-
-RULES:
-- ONE question per message — NEVER combine two questions
-- NEVER output JSON before patient confirms
-- headache/migraine→Neurologist, stomach/nausea→Gastroenterologist, heart/chest→Cardiologist, skin→Dermatologist, ear/nose/throat→ENT, bones/joints→Orthopedic, eyes→Ophthalmologist, only fever/cold→General Physician
-- Reject past dates/times. Today only after ${getCurrentTimeStr()}
-- Keep replies 1-2 sentences max, warm and natural, no emojis
-- Be DIRECT and CLEAR — say exactly what you need, nothing extra
-- Never repeat what the patient just said back to them
-- Never say "I understand" or "I see" or "Of course" — just ask the next question directly
-- Voice output only — no markdown, no bullet points, no lists
-
-Available doctors:
-Dr. Arvind Sharma — General Physician — Rs 500
-Dr. Rajesh Mehta — Cardiologist — Rs 1200
-Dr. Priya Kapoor — Dermatologist — Rs 800
-Dr. Suresh Verma — Orthopedic Surgeon — Rs 1000
-Dr. Kavitha Rao — ENT Specialist — Rs 700
-Dr. Anil Gupta — Neurologist — Rs 1500
-Dr. Vikram Singh — Gastroenterologist — Rs 900
-Dr. Sunita Patel — Pediatrician — Rs 600
-Dr. Pooja Menon — Psychiatrist — Rs 1200
-Dr. Harish Nambiar — Dentist — Rs 600
-Dr. Ananya Krishnan — Gynecologist — Rs 1000
-Dr. Sanjay Reddy — Ophthalmologist — Rs 900`
+CANCEL: <<<CANCEL_JSON>>>{"ref":"${activeBooking?.ref || ""}","name":"","phone":"","doctor":"","date":"","time":""}<<<END_CANCEL>>>
+RESCHEDULE: <<<RESCHEDULE_JSON>>>{"ref":"${activeBooking?.ref || ""}","name":"","phone":"","doctor":"","date":"","time":"","newDate":"","newTime":""}<<<END_RESCHEDULE>>>
+CONNECT TO DOCTOR: <<<CONNECT_DOCTOR>>>{"patientName":"","patientPhone":"","doctorName":"","reason":""}<<<END_CONNECT>>>`
 }
 
 // ── Parse JSON blocks ─────────────────────────────────────────────────────────
@@ -583,7 +547,6 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
   const session = voiceSessions[sessionId]
 
   // ── Emergency check — highest priority ───────────────────────────────────
-  const msgLower = userMessage.toLowerCase()
   if (session.emergency || checkEmergency(userMessage)) {
     session.emergency = true
     console.log(`🚨 EMERGENCY: "${userMessage}"`)
@@ -591,29 +554,25 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
   }
 
   // ── Auto-detect language from message script ─────────────────────────────
-  // This runs EVERY message — if Indian script detected, lock language immediately
   const langNames = { hi:"Hindi", ta:"Tamil", te:"Telugu", kn:"Kannada", ml:"Malayalam", en:"English" }
 
   function detectScriptLang(text) {
-    if (/[ಀ-೿]/.test(text)) return "kn"  // Kannada
-    if (/[ऀ-ॿ]/.test(text)) return "hi"  // Hindi/Devanagari
-    if (/[஀-௿]/.test(text)) return "ta"  // Tamil
-    if (/[ఀ-౿]/.test(text)) return "te"  // Telugu
-    if (/[ഀ-ൿ]/.test(text)) return "ml"  // Malayalam
+    if (/[ಀ-೿]/.test(text)) return "kn"
+    if (/[ऀ-ॿ]/.test(text)) return "hi"
+    if (/[஀-௿]/.test(text)) return "ta"
+    if (/[ఀ-౿]/.test(text)) return "te"
+    if (/[ഀ-ൿ]/.test(text)) return "ml"
     return null
   }
 
   const detectedFromScript = detectScriptLang(userMessage)
-
   if (detectedFromScript) {
-    // Patient is writing in Indian script — lock language to that script
     if (session.data.lang !== detectedFromScript) {
       session.data.lang     = detectedFromScript
       session.data.langName = langNames[detectedFromScript]
       console.log(`🌐 Auto-detected from script: ${session.data.langName}`)
     }
   } else if (req_lang && req_lang !== "en" && req_lang !== session.data.lang) {
-    // Use frontend-provided lang if no script detected
     session.data.lang     = req_lang
     session.data.langName = langNames[req_lang] || "English"
     console.log(`🌐 Language set from UI: ${session.data.langName}`)
@@ -621,8 +580,6 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     session.data.lang     = "en"
     session.data.langName = "English"
   }
-  // NOTE: Once a non-English language is set, it STAYS for the whole session
-  // It only changes if patient sends a different Indian script
 
   // Extract info
   session.data = extractInfo(userMessage, session.data)
@@ -635,10 +592,8 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     session.data.activeBookingChecked = true
     if (activeBooking) {
       console.log(`📅 Active booking found: ${activeBooking.ref}`)
-      // Clear any stale date/time from previous capture — patient hasn't given new ones yet
       session.data.newDate = null
       session.data.newTime = null
-      // Build booking prompt in patient's language
       const lang4booking = session.data.lang || "en"
       const bookingPrompts = {
         en: `I can see you have an appointment with ${activeBooking.doctorName} on ${activeBooking.date} at ${activeBooking.time}. Would you like to cancel it, reschedule it, or book a new appointment?`,
@@ -658,22 +613,19 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
   }
 
   // ── Input validation ─────────────────────────────────────────────────────
-  // Accept: English letters OR any Indian script character
-  // Reject: pure symbols, numbers only, empty
   const INDIAN_SCRIPT = new RegExp(
-    '[\u0900-\u097F' +  // Devanagari (Hindi)
-    '\u0C80-\u0CFF' +   // Kannada
-    '\u0C00-\u0C7F' +   // Telugu  
-    '\u0D00-\u0D7F' +   // Malayalam
-    '\u0B80-\u0BFF]'    // Tamil
+    '[\u0900-\u097F' +
+    '\u0C80-\u0CFF' +
+    '\u0C00-\u0C7F' +
+    '\u0D00-\u0D7F' +
+    '\u0B80-\u0BFF]'
   )
   const hasText = /[a-zA-Z]/.test(userMessage) || INDIAN_SCRIPT.test(userMessage)
-  console.log("Input validation — hasText:", hasText, "| msg:", userMessage.slice(0,30))
+  console.log("Input validation — hasText:", hasText, "| msg:", userMessage.slice(0, 30))
   if (!hasText) {
     return "I didn't catch that clearly. Could you please repeat?"
   }
 
-  // Gibberish filter ONLY for English-only short messages at booking choice point
   const lastAI = session.history.filter(m => m.role === "assistant").slice(-1)[0]?.content?.toLowerCase() || ""
   const isWaitingForBookingChoice = lastAI.includes("cancel it, reschedule it, or book")
   const msgLow2 = userMessage.toLowerCase().trim()
@@ -688,7 +640,7 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     }
   }
 
-  // ── Direct intent detection — handle BEFORE Groq to avoid confusion ────
+  // ── Direct intent detection ──────────────────────────────────────────────
   const msgLow = userMessage.toLowerCase()
   const isConnectIntent = msgLow.includes("connect") || msgLow.includes("talk to doctor") ||
     msgLow.includes("speak to doctor") || msgLow.includes("call doctor") ||
@@ -696,10 +648,10 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     (msgLow.includes("doctor") && (msgLow.includes("talk") || msgLow.includes("speak") || msgLow.includes("call") || msgLow.includes("connect")))
 
   if (isConnectIntent && session.data.phone) {
-    const doctorPhone = (process.env.DOCTOR_PHONE || process.env.DOCTOR_WHATSAPP_NUMBER || "").replace(/\D/g,"")
-    const patientName = session.data.name || "Patient"
+    const doctorPhone = (process.env.DOCTOR_PHONE || process.env.DOCTOR_WHATSAPP_NUMBER || "").replace(/\D/g, "")
+    const patientName  = session.data.name || "Patient"
     const patientPhone = session.data.phone
-    const doctorName = session.data.activeBooking?.doctorName || activeBooking?.doctorName || "your doctor"
+    const doctorName   = session.data.activeBooking?.doctorName || activeBooking?.doctorName || "your doctor"
 
     storeDoctorConnectRequest(patientPhone, {
       patientName, patientPhone, doctorName,
@@ -709,16 +661,12 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     console.log(`📞 Direct connect intent detected — sending WhatsApp to doctor: ${doctorPhone}`)
     if (doctorPhone) {
       const sent = await sendWhatsApp(doctorPhone,
-        `*Patient Connect Request*
-
-Patient *${patientName}* (${patientPhone}) wants to speak with ${doctorName}.
-
-Reply *YES* if you are available and we will share your number with the patient.`)
+        `*Patient Connect Request*\n\nPatient *${patientName}* (${patientPhone}) wants to speak with ${doctorName}.\n\nReply *YES* if you are available and we will share your number with the patient.`)
       console.log(`📞 Doctor connect WhatsApp sent: ${sent}`)
     } else {
       console.error("❌ DOCTOR_PHONE not set in .env")
     }
-    return `I have sent a message to ${doctorName} on WhatsApp. Once the doctor confirms availability, you will receive their contact details on your WhatsApp number ${patientPhone}.`
+    return `I've sent a message to ${doctorName} right now. As soon as the doctor confirms, you'll get their number on WhatsApp at ${patientPhone}.`
   }
 
   session.history.push({ role: "user", content: userMessage })
@@ -759,23 +707,21 @@ Reply *YES* if you are available and we will share your number with the patient.
       }
     }
 
-    // ── Doctor phone available to all blocks ─────────────────────────────
-    const doctorPhone = (process.env.DOCTOR_PHONE || process.env.DOCTOR_WHATSAPP_NUMBER || "").replace(/\D/g,"")
+    const doctorPhone = (process.env.DOCTOR_PHONE || process.env.DOCTOR_WHATSAPP_NUMBER || "").replace(/\D/g, "")
     if (!doctorPhone) console.warn("⚠️  DOCTOR_PHONE not set in .env")
 
     // ── BOOKING ────────────────────────────────────────────────────────────
     if (!session.booked) {
       let booking = extractBlock(raw, "<<<BOOKING_JSON>>>", "<<<END_BOOKING>>>")
 
-      // Fallback: if no JSON tag but AI confirmed AND we have all required data
       if (!booking) {
         const replyLower = raw.toLowerCase()
-        const isConfirmed = replyLower.includes("confirmed") || 
+        const isConfirmed = replyLower.includes("confirmed") ||
                             replyLower.includes("appointment is booked") ||
                             replyLower.includes("all set") ||
                             replyLower.includes("see you then") ||
                             replyLower.includes("look forward to seeing you")
-        const hasAllData = session.data.name && session.data.phone && 
+        const hasAllData = session.data.name && session.data.phone &&
                            session.data.doctor && (session.data.newDate || session.data.date)
         if (isConfirmed && hasAllData) {
           console.log("⚠️  No JSON tag but booking confirmed — using session data as fallback")
@@ -810,19 +756,16 @@ Reply *YES* if you are available and we will share your number with the patient.
           source:       "voice"
         }
 
-        // ── Slot conflict awareness ────────────────────────────────────────
         const slotCount = getSlotBookingCount(fullBooking.doctorId, fullBooking.date, fullBooking.time)
-
         if (slotCount >= 3) {
           const suggestedTime = suggestNextSlot(fullBooking.time)
           if (suggestedTime && suggestedTime !== fullBooking.time) {
             session.data.newTime = suggestedTime
           }
-          return `That slot is fully booked. The next available slot for ${fullBooking.doctorName} is ${suggestedTime || fullBooking.time}. Shall I book that instead?`
+          return `That slot is fully booked. The next available with ${fullBooking.doctorName} is ${suggestedTime || fullBooking.time} — shall I book that instead?`
         }
-
         if (slotCount === 2) {
-          return "That slot is almost full — only 1 spot left. Shall I confirm it?"
+          return `That slot is almost full, just one spot left. Want me to go ahead and confirm it?`
         }
 
         session.booked = true
@@ -843,7 +786,7 @@ Reply *YES* if you are available and we will share your number with the patient.
             `*New Appointment (Voice)*\n\nPatient: ${fullBooking.patientName}\nPhone: ${fullBooking.patientPhone}\nDate: ${fullBooking.date} at ${fullBooking.time}\nRef: ${ref}`)
         }
         console.log(`✅ Booking complete: ${ref}`)
-        return `Your appointment with ${fullBooking.doctorName} on ${fullBooking.date} at ${fullBooking.time} is confirmed. Reference number is ${ref}. A WhatsApp confirmation has been sent to your number. Please check your WhatsApp.`
+        return `You're all set, ${fullBooking.patientName}! Appointment confirmed with ${fullBooking.doctorName} on ${fullBooking.date} at ${fullBooking.time}. Fee is Rs ${fullBooking.fee}, reference number ${ref}. Check your WhatsApp for the confirmation.`
       }
     }
 
@@ -852,7 +795,7 @@ Reply *YES* if you are available and we will share your number with the patient.
       const cancel = extractBlock(raw, "<<<CANCEL_JSON>>>", "<<<END_CANCEL>>>")
       if (cancel && (cancel.ref || activeBooking)) {
         session.cancelled = true
-        const ref     = cancel.ref || activeBooking?.ref
+        const ref       = cancel.ref || activeBooking?.ref
         const cancelled = cancelBookingByRef(ref)
         if (cancelled) {
           session.data.activeBooking = null
@@ -866,7 +809,7 @@ Reply *YES* if you are available and we will share your number with the patient.
               `*Appointment Cancelled*\n\nPatient: ${cancelled.patientName}\nWas: ${cancelled.date} at ${cancelled.time}\nRef: ${ref}\n\nSlot is now free.`)
           }
           console.log(`✅ Cancellation complete: ${ref}`)
-          return `Your appointment with ${cancelled.doctorName} on ${cancelled.date} has been successfully cancelled. A confirmation has been sent to your WhatsApp and the doctor has been notified.`
+          return `Done — your appointment with ${cancelled.doctorName} on ${cancelled.date} has been cancelled. You'll get a WhatsApp confirmation shortly. Is there anything else I can help with?`
         }
       }
     }
@@ -876,34 +819,17 @@ Reply *YES* if you are available and we will share your number with the patient.
       const reschedule = extractBlock(raw, "<<<RESCHEDULE_JSON>>>", "<<<END_RESCHEDULE>>>")
       if (reschedule && (reschedule.ref || activeBooking)) {
         session.rescheduled = true
-        const ref       = reschedule.ref || activeBooking?.ref
-        const newDate   = reschedule.newDate || session.data.newDate || reschedule.date
-        const newTime   = reschedule.newTime || session.data.newTime || reschedule.time
-        const updated   = rescheduleBooking(ref, newDate, newTime)
+        const ref     = reschedule.ref || activeBooking?.ref
+        const newDate = reschedule.newDate || session.data.newDate || reschedule.date
+        const newTime = reschedule.newTime || session.data.newTime || reschedule.time
+        const updated = rescheduleBooking(ref, newDate, newTime)
         if (updated) {
           session.data.activeBooking = updated
           const patientPhone = updated.patientPhone || session.data.phone || ""
           console.log(`📱 Sending reschedule WhatsApp to patient: "${patientPhone}", doctor: "${doctorPhone}"`)
-          
-          const patientMsg = `*VoxOps MediCare - Appointment Rescheduled*
 
-Hi ${updated.patientName},
-
-Your appointment has been successfully rescheduled.
-
-*Doctor:* ${updated.doctorName}
-*New Date:* ${newDate}
-*New Time:* ${newTime}
-*Ref:* ${ref}
-
-See you then! Please arrive 10 mins early.`
-          
-          const doctorMsg = `*Appointment Rescheduled*
-
-Patient: ${updated.patientName}
-Phone: ${patientPhone}
-New Date: ${newDate} at ${newTime}
-Ref: ${ref}`
+          const patientMsg = `*VoxOps MediCare - Appointment Rescheduled*\n\nHi ${updated.patientName},\n\nYour appointment has been successfully rescheduled.\n\n*Doctor:* ${updated.doctorName}\n*New Date:* ${newDate}\n*New Time:* ${newTime}\n*Ref:* ${ref}\n\nSee you then! Please arrive 10 mins early.`
+          const doctorMsg  = `*Appointment Rescheduled*\n\nPatient: ${updated.patientName}\nPhone: ${patientPhone}\nNew Date: ${newDate} at ${newTime}\nRef: ${ref}`
 
           if (patientPhone) {
             const pSent = await sendWhatsApp(patientPhone, patientMsg)
@@ -918,7 +844,7 @@ Ref: ${ref}`
             console.error("❌ DOCTOR_PHONE not set — cannot notify doctor of reschedule")
           }
           console.log(`✅ Reschedule complete: ${ref}`)
-          return `Your appointment has been rescheduled to ${newDate} at ${newTime}. A WhatsApp confirmation has been sent to your number. Your reference number is ${ref}.`
+          return `Done! Rescheduled to ${newDate} at ${newTime}. WhatsApp confirmation is on its way. Your reference stays the same — ${ref}.`
         }
       }
     }
@@ -939,39 +865,28 @@ Ref: ${ref}`
       console.log(`📞 Sending connect request to doctor phone: "${doctorPhone}"`)
       if (doctorPhone) {
         const sent = await sendWhatsApp(doctorPhone,
-          `*Patient Connect Request*
-
-Patient *${connect.patientName}* (${patientPhone}) wants to speak with ${doctorName}.
-
-Reason: ${connect.reason || "Not specified"}
-
-Reply *YES* to this message if you are available and we will connect them to you.`)
+          `*Patient Connect Request*\n\nPatient *${connect.patientName}* (${patientPhone}) wants to speak with ${doctorName}.\n\nReason: ${connect.reason || "Not specified"}\n\nReply *YES* to this message if you are available and we will connect them to you.`)
         console.log(`📞 Doctor connect WhatsApp sent: ${sent}`)
       } else {
         console.error("❌ DOCTOR_PHONE not configured in .env — cannot send connect request")
       }
       console.log(`📞 Doctor connect request processed for ${connect.patientName}`)
-      return `I have sent a message to ${doctorName} requesting a connection. The doctor will respond on WhatsApp shortly. If available, you will receive their contact details on your WhatsApp number.`
+      return `I've messaged ${doctorName} right now. Once the doctor is available, you'll get their number on WhatsApp at ${patientPhone}.`
     }
-
-    // NOTE: Do NOT capture date/time from AI replies — only from user messages (extractInfo)
-    // Capturing from AI replies causes hallucination bugs where AI-invented dates get saved
 
     return cleanSpeech(raw)
 
   } catch(err) {
     console.error("voiceAgent error:", err.message)
-    return "I am sorry, I missed that. Could you please say it again?"
+    return "Sorry about that — could you say that again?"
   }
 }
 
 // ── Handle doctor reply "YES" from WhatsApp ───────────────────────────────────
-// Call this from server.js when doctor sends YES to the connect request
 async function handleDoctorConnectReply(doctorPhoneRaw, message) {
   const msgLower = message.toLowerCase().trim()
   if (!msgLower.startsWith("yes")) return false
 
-  // Find the most recent pending request
   const pending = Object.values(doctorConnectRequests)
     .filter(r => r.status === "pending")
     .sort((a, b) => b.createdAt - a.createdAt)[0]
@@ -984,32 +899,15 @@ async function handleDoctorConnectReply(doctorPhoneRaw, message) {
   pending.status = "accepted"
   console.log(`✅ Doctor available for ${pending.patientName}`)
 
-  // Extract clean doctor phone number for display
   const doctorDisplayNum = doctorPhoneRaw
-    .replace("whatsapp:","")
-    .replace("+91","")
-    .replace("+","")
-    .replace(/\D/g,"")
+    .replace("whatsapp:", "")
+    .replace("+91", "")
+    .replace("+", "")
+    .replace(/\D/g, "")
     .slice(-10)
 
-  // Notify patient with doctor's number
   const sent = await sendWhatsApp(pending.patientPhone,
-    `*VoxOps MediCare - Doctor Available Now*
-
-` +
-    `Good news, ${pending.patientName}!
-
-` +
-    `*${pending.doctorName}* is available to speak with you right now.
-
-` +
-    `📞 Call the doctor at: *+91 ${doctorDisplayNum}*
-
-` +
-    `Or wait — the doctor will call you on your number shortly.
-
-` +
-    `_VoxOps MediCare_`)
+    `*VoxOps MediCare - Doctor Available Now*\n\nGood news, ${pending.patientName}!\n\n*${pending.doctorName}* is available to speak with you right now.\n\n📞 Call the doctor at: *+91 ${doctorDisplayNum}*\n\nOr wait — the doctor will call you on your number shortly.\n\n_VoxOps MediCare_`)
 
   console.log(`📱 Patient notified: ${sent}, doctor number shared: ${doctorDisplayNum}`)
   return true
