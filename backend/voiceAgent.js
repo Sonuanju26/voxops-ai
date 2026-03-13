@@ -328,6 +328,148 @@ function checkEmergency(msg) {
   return false
 }
 
+// ── Insurance data ────────────────────────────────────────────────────────────
+const INSURANCE_FILE = path.join(__dirname, "insurance.json")
+
+function loadInsurance() {
+  try { return JSON.parse(fs.readFileSync(INSURANCE_FILE, "utf8")) }
+  catch(e) { return { criticalConditions:{}, conditionKeywords:{}, insurers:{}, doctors:{} } }
+}
+
+// Detect if patient message mentions a critical/severe condition
+function detectCriticalCondition(msg) {
+  const data = loadInsurance()
+  const keywords = data.conditionKeywords || {}
+  const msgLow = msg.toLowerCase()
+  for (const [condition, kwList] of Object.entries(keywords)) {
+    if (kwList.some(kw => msgLow.includes(kw))) {
+      const condData = data.criticalConditions[condition]
+      if (condData) return { condition, ...condData }
+    }
+  }
+  return null
+}
+
+// Extract insurance provider name from patient message
+function extractInsuranceProvider(msg) {
+  const data = loadInsurance()
+  const msgLow = msg.toLowerCase().trim()
+  // Check for "no insurance" first
+  const noInsurance = ["no insurance","don't have","dont have","no cover","uninsured","no policy","self pay","cash","no scheme"]
+  if (noInsurance.some(k => msgLow.includes(k))) return { provider: "none", insurer: null }
+  // Match against known insurer keys and shortcodes
+  for (const [key, ins] of Object.entries(data.insurers || {})) {
+    if (msgLow.includes(key) || msgLow.includes((ins.shortCode||"").toLowerCase())) {
+      return { provider: key, insurer: ins }
+    }
+  }
+  return null
+}
+
+// Extract coverage amount from patient message (e.g. "5 lakh", "500000", "3 lakhs")
+function extractCoverageAmount(msg) {
+  const msgLow = msg.toLowerCase().replace(/,/g,"")
+  // "X lakh/lakhs" pattern
+  const lakhMatch = msgLow.match(/(\d+(?:\.\d+)?)\s*lakh/)
+  if (lakhMatch) return Math.round(parseFloat(lakhMatch[1]) * 100000)
+  // Plain number >= 10000
+  const numMatch = msgLow.match(/\b(\d{5,8})\b/)
+  if (numMatch) return parseInt(numMatch[1])
+  return null
+}
+
+// Calculate how much insurance pays vs patient pays for a critical condition
+function calculateInsuranceSplit(insurer, condition, coverageAmount) {
+  const data = loadInsurance()
+  const condData = data.criticalConditions?.[condition]
+  if (!condData) return null
+
+  const estimatedCost = condData.estimatedCost
+  const isCovered = insurer.criticalConditionsCovered?.includes(condition)
+  const coveragePct = isCovered ? (insurer.criticalCoveragePercent || insurer.coveragePercent) : 0
+  const copayPct = insurer.copay || 0
+
+  // Effective coverage = min(coverage amount, estimated cost * coveragePct%)
+  const maxInsurancePays = coverageAmount
+    ? Math.min(coverageAmount, Math.round(estimatedCost * coveragePct / 100))
+    : Math.round(estimatedCost * coveragePct / 100)
+
+  const insurerPays = isCovered ? maxInsurancePays : 0
+  const patientPays = estimatedCost - insurerPays
+  const effectivePct = Math.round((insurerPays / estimatedCost) * 100)
+  const copayAmount = isCovered ? Math.round(insurerPays * copayPct / 100) : 0
+  const finalPatientPays = patientPays + copayAmount
+
+  return {
+    estimatedCost,
+    isCovered,
+    cashless: insurer.cashless,
+    insurerPays,
+    patientPays: finalPatientPays,
+    effectivePct,
+    copayPct,
+    copayAmount,
+    coveragePct,
+    waitingPeriod: insurer.waitingPeriod,
+    notes: insurer.notes,
+    displayName: insurer.displayName
+  }
+}
+
+// Documents required based on condition severity and insurer type
+function getClaimDocuments(condition, insurer, isCashless) {
+  const condData = loadInsurance().criticalConditions?.[condition]
+  const severity = condData?.severity || "SERIOUS"
+
+  const baseDocsCashless = [
+    "Insurance card / policy document (original or photo)",
+    "Valid government photo ID (Aadhaar / PAN / Passport)",
+    "Duly filled cashless pre-authorization form (hospital will provide)",
+    "Doctor's referral letter stating diagnosis and treatment plan",
+    "Previous medical records related to this condition (if any)"
+  ]
+  const baseDocsReimbursement = [
+    "Insurance card / policy document (original)",
+    "Valid government photo ID (Aadhaar / PAN / Passport)",
+    "Original discharge summary from hospital",
+    "All original bills and receipts (hospital, pharmacy, diagnostics)",
+    "Doctor's certificate stating diagnosis and treatment given",
+    "All original investigation reports (blood tests, scans, X-rays)",
+    "Duly filled claim reimbursement form (from insurer's website)",
+    "Cancelled cheque or bank passbook copy for NEFT settlement"
+  ]
+
+  const conditionSpecificDocs = {
+    "heart attack":     ["ECG reports (all strips)", "Cardiac enzyme reports (Troponin, CPK-MB)", "Angiography/Angioplasty report if done"],
+    "bypass surgery":   ["Surgeon's operation notes", "Anesthesia report", "ICU daily charts", "Pre-op cardiac evaluation report"],
+    "angioplasty":      ["Coronary angiography report", "Stent invoice with model number and price", "Cardiologist's procedure note"],
+    "heart failure":    ["Echocardiogram report", "BNP / NT-proBNP blood test report", "Cardiologist's case summary"],
+    "liver cirrhosis":  ["Liver function test reports (LFT)", "Ultrasound / fibroscan report", "Hepatologist's treatment summary"],
+    "liver transplant": ["Transplant surgery notes", "Donor compatibility report", "NOTTO registration proof", "Immunosuppression prescription"],
+    "liver failure":    ["Liver function tests", "Coagulation profile (PT/INR)", "ICU treatment chart"],
+    "fracture":         ["X-ray reports (before and after)", "Orthopedic surgeon's notes", "Implant invoice with make/model if surgery done"],
+    "hip replacement":  ["Pre-op X-rays", "Implant invoice with model number", "Physiotherapy discharge notes"],
+    "knee replacement": ["Pre-op X-rays / MRI", "Implant invoice with model number", "Physiotherapy records"],
+    "spinal surgery":   ["MRI spine report", "Neurosurgeon / orthopedic surgeon's operative notes", "Implant invoice if used"],
+    "cancer":           ["Biopsy / histopathology report", "Oncologist's treatment plan", "Chemotherapy / radiation prescriptions", "FNAC report if applicable"],
+    "stroke":           ["CT or MRI brain report", "Neurologist's case summary", "Physiotherapy / speech therapy records if applicable"],
+    "kidney failure":   ["Creatinine and GFR blood reports", "Nephrologist's case summary", "Dialysis records if applicable"],
+    "appendix":         ["Ultrasound / CT abdomen report", "Surgeon's operative notes", "Laparoscopy report"],
+    "gallstone":        ["Ultrasound abdomen report", "Surgeon's operative notes", "Specimen report if sent to pathology"],
+    "pneumonia":        ["Chest X-ray reports", "Sputum culture report if done", "Pulmonologist's case summary"],
+    "diabetes complications": ["HbA1c report", "Endocrinologist's treatment summary", "Related specialist reports (retina, kidney, foot)"]
+  }
+
+  const baseDocs = isCashless ? baseDocsCashless : baseDocsReimbursement
+  const extraDocs = conditionSpecificDocs[condition] || []
+
+  const preAuthNote = isCashless
+    ? "⚡ CASHLESS: Submit pre-authorization BEFORE starting treatment. Our hospital's TPA desk will handle this — ask at the front desk immediately on admission."
+    : "💳 REIMBURSEMENT: Collect and keep EVERY original bill and report. Submit claim within 30 days of discharge."
+
+  return { baseDocs, extraDocs, preAuthNote, isCashless }
+}
+
 // ── Extract info from message ─────────────────────────────────────────────────
 function extractInfo(msg, data) {
   const phoneClean = msg.replace(/\s+/g, "")
@@ -668,6 +810,167 @@ async function handleVoiceConversation(sessionId, userMessage, req_lang = "en") 
     }
     return `I've sent a message to ${doctorName} right now. As soon as the doctor confirms, you'll get their number on WhatsApp at ${patientPhone}.`
   }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // INSURANCE FLOW — runs in parallel with booking, intercepts when needed
+  // Stages: detected → ask_provider → ask_coverage → show_split → show_docs
+  // ════════════════════════════════════════════════════════════════════════
+
+  const ins = session.data.insuranceFlow || {}
+
+  // STAGE 0 — detect critical condition (fires once, on ANY message)
+  if (!ins.conditionDetected) {
+    // Check current message AND all prior user messages
+    const allUserMsgs = session.history.filter(m => m.role === "user").map(m => m.content).join(" ") + " " + userMessage
+    const critical = detectCriticalCondition(allUserMsgs)
+    if (critical) {
+      ins.conditionDetected = true
+      ins.condition = critical.condition
+      ins.conditionData = critical
+      ins.stage = "ask_provider"
+      session.data.insuranceFlow = ins
+      console.log(`🏥 Critical condition detected: ${critical.condition} (${critical.severity})`)
+
+      const costStr = critical.estimatedCost >= 100000
+        ? `Rs ${(critical.estimatedCost / 100000).toFixed(1)} lakh`
+        : `Rs ${critical.estimatedCost.toLocaleString()}`
+      const severityLine = critical.severity === "CRITICAL"
+        ? `This is a serious condition that typically requires hospitalization.`
+        : `This condition will likely need hospital treatment.`
+
+      const alertMsg = `${severityLine} ${critical.label} treatment costs around ${costStr}. ${critical.insuranceAdvice} Do you have health insurance? If yes, which provider — for example Star Health, HDFC Ergo, Ayushman Bharat, or any other?`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: alertMsg })
+      return alertMsg
+    }
+  }
+
+  // STAGE 1 — we asked for provider, now read their answer
+  if (ins.stage === "ask_provider" && !ins.providerAnswered) {
+    ins.providerAnswered = true
+    const providerResult = extractInsuranceProvider(userMessage)
+
+    if (providerResult && providerResult.provider === "none") {
+      // No insurance — tell them total cost and proceed to booking
+      ins.stage = "done"
+      ins.hasInsurance = false
+      session.data.insuranceFlow = ins
+      const costStr = ins.conditionData?.estimatedCost >= 100000
+        ? `Rs ${(ins.conditionData.estimatedCost / 100000).toFixed(1)} lakh`
+        : `Rs ${ins.conditionData?.estimatedCost?.toLocaleString() || "the full amount"}`
+      const noInsMsg = `No problem — you'll be paying the full estimated cost of ${costStr} directly. Our billing team can help you with a payment plan if needed. Now let's get your appointment sorted. What date works for you?`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: noInsMsg })
+      return noInsMsg
+    }
+
+    if (providerResult && providerResult.insurer) {
+      ins.provider = providerResult.provider
+      ins.insurer = providerResult.insurer
+      ins.stage = "ask_coverage"
+      session.data.insuranceFlow = ins
+      const askCovMsg = `Great — ${providerResult.insurer.displayName} is accepted at our hospital. What is your total insurance coverage amount? For example, 3 lakh, 5 lakh, or whatever your policy sum insured is.`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: askCovMsg })
+      return askCovMsg
+    }
+
+    // Provider mentioned but not recognized — ask them to clarify
+    ins.providerAnswered = false // let them retry
+    session.data.insuranceFlow = ins
+    const clarifyMsg = `I didn't catch the insurance provider name clearly. Could you say it again? For example — Star Health, HDFC Ergo, ICICI Lombard, Bajaj Allianz, Ayushman Bharat, or say "no insurance" if you're self-paying.`
+    session.history.push({ role: "user", content: userMessage })
+    session.history.push({ role: "assistant", content: clarifyMsg })
+    return clarifyMsg
+  }
+
+  // STAGE 2 — we asked for coverage amount, now read their answer
+  if (ins.stage === "ask_coverage" && !ins.coverageAnswered) {
+    const amount = extractCoverageAmount(userMessage)
+    if (!amount) {
+      // Couldn't parse — ask again simply
+      const retryMsg = `I didn't catch the amount. Please say your total coverage — for example, "5 lakh" or "3 lakh".`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: retryMsg })
+      return retryMsg
+    }
+
+    ins.coverageAmount = amount
+    ins.coverageAnswered = true
+    ins.stage = "show_split"
+    session.data.insuranceFlow = ins
+
+    const split = calculateInsuranceSplit(ins.insurer, ins.condition, amount)
+    ins.split = split
+    session.data.insuranceFlow = ins
+
+    if (!split) {
+      const fallbackMsg = `Got it — coverage of Rs ${(amount/100000).toFixed(1)} lakh noted. Let's proceed with your booking. What date works for you?`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: fallbackMsg })
+      return fallbackMsg
+    }
+
+    const costStr   = `Rs ${(split.estimatedCost / 100000).toFixed(1)} lakh`
+    const insPayStr = split.insurerPays >= 100000
+      ? `Rs ${(split.insurerPays / 100000).toFixed(1)} lakh`
+      : `Rs ${split.insurerPays.toLocaleString()}`
+    const ptPayStr  = split.patientPays >= 100000
+      ? `Rs ${(split.patientPays / 100000).toFixed(1)} lakh`
+      : `Rs ${split.patientPays.toLocaleString()}`
+
+    let splitMsg = ""
+    if (split.isCovered) {
+      const cashlessNote = split.cashless ? "This is a cashless policy — no upfront payment needed at admission." : "You'll pay upfront and claim reimbursement after discharge."
+      splitMsg = `Here's your coverage breakdown. Estimated treatment cost: ${costStr}. Your ${split.displayName} covers ${split.effectivePct}% — that's ${insPayStr} paid by the insurer. You pay only ${ptPayStr}${split.copayPct > 0 ? ` (includes ${split.copayPct}% copay)` : ""}. ${cashlessNote} Shall I also tell you what documents you'll need to submit for the claim?`
+    } else {
+      splitMsg = `Your ${split.displayName} policy unfortunately does not cover ${ins.conditionData?.label} at our hospital. You'll need to pay the full estimated cost of ${costStr} directly. Would you still like to proceed with the appointment?`
+    }
+
+    session.history.push({ role: "user", content: userMessage })
+    session.history.push({ role: "assistant", content: splitMsg })
+    return splitMsg
+  }
+
+  // STAGE 3 — patient said yes to seeing documents
+  if (ins.stage === "show_split" && ins.split?.isCovered) {
+    const msgLow = userMessage.toLowerCase()
+    const wantsDocs = ["yes","yeah","sure","ok","okay","tell me","show me","what documents","documents","please","haan","ha "].some(k => msgLow.includes(k))
+    if (wantsDocs) {
+      ins.stage = "show_docs"
+      session.data.insuranceFlow = ins
+
+      const docs = getClaimDocuments(ins.condition, ins.insurer, ins.split.cashless)
+      const baseList  = docs.baseDocs.map((d, i) => `${i+1}. ${d}`).join(". ")
+      const extraList = docs.extraDocs.length
+        ? " Additionally for " + ins.conditionData?.label + ": " + docs.extraDocs.join(", ") + "."
+        : ""
+      const docsMsg = `${docs.preAuthNote} Here are the documents you'll need: ${baseList}.${extraList} Our hospital's insurance helpdesk at the front desk can guide you through the paperwork. Shall we now finalize your appointment?`
+
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: docsMsg })
+      return docsMsg
+    } else {
+      // Patient said no to docs — move on to booking
+      ins.stage = "done"
+      session.data.insuranceFlow = ins
+      const skipMsg = `No problem. Our insurance helpdesk at the front desk will assist you on arrival. Now let's book your appointment — what date works for you?`
+      session.history.push({ role: "user", content: userMessage })
+      session.history.push({ role: "assistant", content: skipMsg })
+      return skipMsg
+    }
+  }
+
+  // STAGE 4 — after docs shown, move on
+  if (ins.stage === "show_docs") {
+    ins.stage = "done"
+    session.data.insuranceFlow = ins
+    // Fall through to normal booking flow below
+  }
+
+  // ════════════════════════════════════════════════════════════════════════
+  // END INSURANCE FLOW
+  // ════════════════════════════════════════════════════════════════════════
 
   session.history.push({ role: "user", content: userMessage })
 

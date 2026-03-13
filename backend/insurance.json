@@ -1,0 +1,357 @@
+{
+  "criticalConditions": {
+    "heart attack": {
+      "severity": "CRITICAL",
+      "label": "Heart Attack / Cardiac Event",
+      "doctorId": "DOC002",
+      "estimatedCost": 250000,
+      "procedures": ["Angioplasty", "Bypass Surgery", "ECG", "Cardiac ICU"],
+      "urgency": "Immediate hospitalization required",
+      "insuranceAdvice": "This is a high-cost cardiac event. Insurance can save you Rs 1.5–3 lakh. Please confirm your insurance provider immediately.",
+      "avgHospitalDays": 5
+    },
+    "bypass surgery": {
+      "severity": "CRITICAL",
+      "label": "Heart Bypass Surgery (CABG)",
+      "doctorId": "DOC002",
+      "estimatedCost": 350000,
+      "procedures": ["Coronary Artery Bypass", "General Anesthesia", "ICU Stay", "Post-op Care"],
+      "urgency": "Planned surgery — insurance pre-authorization mandatory",
+      "insuranceAdvice": "Bypass surgery costs Rs 2.5–4 lakh. Most insurers cover 80–100%. Pre-authorization is required — we can help you with the paperwork.",
+      "avgHospitalDays": 7
+    },
+    "heart failure": {
+      "severity": "CRITICAL",
+      "label": "Heart Failure / Cardiac Failure",
+      "doctorId": "DOC002",
+      "estimatedCost": 180000,
+      "procedures": ["Echocardiogram", "Cardiac Monitoring", "Medication Management", "ICU if severe"],
+      "urgency": "Immediate specialist consultation required",
+      "insuranceAdvice": "Heart failure treatment can run Rs 1–2 lakh. Insurance coverage is essential for long-term management.",
+      "avgHospitalDays": 4
+    },
+    "angioplasty": {
+      "severity": "CRITICAL",
+      "label": "Angioplasty / Stent Procedure",
+      "doctorId": "DOC002",
+      "estimatedCost": 200000,
+      "procedures": ["Coronary Angiography", "Stent Placement", "ICU Stay", "Post-procedure Monitoring"],
+      "urgency": "Planned or emergency procedure",
+      "insuranceAdvice": "Angioplasty with stent costs Rs 1.5–2.5 lakh. All major insurers cover this — cashless available at our hospital.",
+      "avgHospitalDays": 3
+    },
+    "liver cirrhosis": {
+      "severity": "CRITICAL",
+      "label": "Liver Cirrhosis / Liver Disease",
+      "doctorId": "DOC007",
+      "estimatedCost": 150000,
+      "procedures": ["Liver Function Tests", "Biopsy", "Portal Hypertension Management", "Endoscopy"],
+      "urgency": "Requires ongoing specialist care",
+      "insuranceAdvice": "Liver disease management costs Rs 80,000–2 lakh annually. Insurance with critical illness rider is strongly recommended.",
+      "avgHospitalDays": 6
+    },
+    "liver transplant": {
+      "severity": "CRITICAL",
+      "label": "Liver Transplant",
+      "doctorId": "DOC007",
+      "estimatedCost": 2000000,
+      "procedures": ["Pre-transplant Evaluation", "Transplant Surgery", "ICU", "Immunosuppression"],
+      "urgency": "Major surgery — requires extensive insurance coverage",
+      "insuranceAdvice": "Liver transplant costs Rs 15–25 lakh. Critical illness insurance or organ transplant rider is essential. Ayushman Bharat covers eligible patients fully.",
+      "avgHospitalDays": 30
+    },
+    "liver failure": {
+      "severity": "CRITICAL",
+      "label": "Acute Liver Failure",
+      "doctorId": "DOC007",
+      "estimatedCost": 300000,
+      "procedures": ["Intensive monitoring", "Dialysis support", "ICU care", "Transplant evaluation"],
+      "urgency": "Emergency — immediate hospitalization",
+      "insuranceAdvice": "Acute liver failure is a medical emergency. Treatment costs Rs 2–5 lakh. Insurance authorization should be done on admission.",
+      "avgHospitalDays": 14
+    },
+    "fracture": {
+      "severity": "SERIOUS",
+      "label": "Bone Fracture",
+      "doctorId": "DOC004",
+      "estimatedCost": 80000,
+      "procedures": ["X-Ray / MRI", "Casting or Surgery (ORIF)", "Physiotherapy", "Follow-up visits"],
+      "urgency": "Prompt orthopedic evaluation required",
+      "insuranceAdvice": "Fracture treatment including surgery costs Rs 50,000–1.5 lakh depending on severity. Insurance covers most orthopedic procedures.",
+      "avgHospitalDays": 2
+    },
+    "hip replacement": {
+      "severity": "SERIOUS",
+      "label": "Hip Replacement Surgery",
+      "doctorId": "DOC004",
+      "estimatedCost": 250000,
+      "procedures": ["Pre-op Evaluation", "Total Hip Arthroplasty", "Implant", "Physiotherapy"],
+      "urgency": "Planned surgery — pre-authorization needed",
+      "insuranceAdvice": "Hip replacement costs Rs 1.5–3 lakh including implant. Most insurers cover implant costs up to their sub-limit. Pre-auth is mandatory.",
+      "avgHospitalDays": 5
+    },
+    "knee replacement": {
+      "severity": "SERIOUS",
+      "label": "Knee Replacement Surgery",
+      "doctorId": "DOC004",
+      "estimatedCost": 220000,
+      "procedures": ["Pre-op Evaluation", "Total Knee Arthroplasty", "Implant", "Physiotherapy"],
+      "urgency": "Planned surgery",
+      "insuranceAdvice": "Knee replacement costs Rs 1.2–2.5 lakh. Insurance covers the procedure but implant sub-limits vary by plan. Check your policy.",
+      "avgHospitalDays": 4
+    },
+    "spinal surgery": {
+      "severity": "SERIOUS",
+      "label": "Spinal / Back Surgery",
+      "doctorId": "DOC004",
+      "estimatedCost": 300000,
+      "procedures": ["MRI Spine", "Discectomy / Laminectomy", "Spinal Fusion", "Post-op Physio"],
+      "urgency": "Specialist evaluation required before surgery",
+      "insuranceAdvice": "Spinal surgery costs Rs 2–4 lakh. Insurance coverage depends on diagnosis — degenerative conditions may have waiting periods.",
+      "avgHospitalDays": 5
+    },
+    "cancer": {
+      "severity": "CRITICAL",
+      "label": "Cancer / Oncology Treatment",
+      "doctorId": "DOC019B",
+      "estimatedCost": 500000,
+      "procedures": ["Biopsy", "Chemotherapy", "Radiation", "Surgery", "Targeted Therapy"],
+      "urgency": "Early specialist consultation is critical",
+      "insuranceAdvice": "Cancer treatment costs Rs 3–15 lakh+ depending on type and stage. A critical illness policy or cancer rider provides the best coverage. Ayushman Bharat covers many cancer treatments.",
+      "avgHospitalDays": 20
+    },
+    "stroke": {
+      "severity": "CRITICAL",
+      "label": "Stroke / Brain Stroke",
+      "doctorId": "DOC006",
+      "estimatedCost": 200000,
+      "procedures": ["CT/MRI Brain", "Thrombolysis", "ICU", "Neurological Rehab"],
+      "urgency": "EMERGENCY — call 108 immediately",
+      "insuranceAdvice": "Stroke treatment and rehab costs Rs 1.5–3 lakh. Time is brain — treatment must start within hours. Insurance authorization happens after stabilization.",
+      "avgHospitalDays": 10
+    },
+    "kidney failure": {
+      "severity": "CRITICAL",
+      "label": "Kidney Failure / Renal Failure",
+      "doctorId": "DOC021B",
+      "estimatedCost": 400000,
+      "procedures": ["Dialysis (ongoing)", "Kidney Transplant Evaluation", "Nephrology Care"],
+      "urgency": "Requires immediate and ongoing specialist care",
+      "insuranceAdvice": "Dialysis alone costs Rs 20,000–30,000/month. Kidney transplant is Rs 8–15 lakh. Critical illness or super top-up insurance is essential.",
+      "avgHospitalDays": 7
+    },
+    "appendix": {
+      "severity": "SERIOUS",
+      "label": "Appendicitis / Appendix Surgery",
+      "doctorId": "DOC007",
+      "estimatedCost": 70000,
+      "procedures": ["Ultrasound/CT", "Laparoscopic Appendectomy", "Hospital Stay"],
+      "urgency": "Surgical emergency — cannot be delayed",
+      "insuranceAdvice": "Appendix surgery costs Rs 50,000–90,000 laparoscopically. Cashless insurance means zero upfront payment at admission.",
+      "avgHospitalDays": 2
+    },
+    "gallstone": {
+      "severity": "SERIOUS",
+      "label": "Gallstone / Gallbladder Surgery",
+      "doctorId": "DOC007",
+      "estimatedCost": 80000,
+      "procedures": ["Ultrasound", "Laparoscopic Cholecystectomy", "Post-op Care"],
+      "urgency": "Planned or emergency surgery",
+      "insuranceAdvice": "Gallbladder removal costs Rs 60,000–1 lakh. Most insurers cover this with a waiting period of 1–2 years for planned surgeries.",
+      "avgHospitalDays": 2
+    },
+    "pneumonia": {
+      "severity": "SERIOUS",
+      "label": "Severe Pneumonia",
+      "doctorId": "DOC018B",
+      "estimatedCost": 60000,
+      "procedures": ["Chest X-Ray", "IV Antibiotics", "Oxygen Therapy", "ICU if severe"],
+      "urgency": "Hospitalization likely required",
+      "insuranceAdvice": "Severe pneumonia requiring hospitalization costs Rs 40,000–80,000. Insurance covers inpatient treatment from day 1.",
+      "avgHospitalDays": 5
+    },
+    "diabetes complications": {
+      "severity": "SERIOUS",
+      "label": "Diabetic Complications",
+      "doctorId": "DOC017B",
+      "estimatedCost": 100000,
+      "procedures": ["HbA1c", "Endocrinology Consult", "Retina Check", "Foot Care", "Kidney Function Tests"],
+      "urgency": "Specialist management required",
+      "insuranceAdvice": "Diabetes complications have high long-term costs. Dedicated diabetes management plans (Star Diabetes Safe, HDFC Energy) offer better coverage.",
+      "avgHospitalDays": 3
+    }
+  },
+
+  "conditionKeywords": {
+    "heart attack": ["heart attack", "myocardial infarction", "mi ", "cardiac arrest", "heart stopped"],
+    "bypass surgery": ["bypass", "cabg", "open heart surgery", "heart surgery"],
+    "heart failure": ["heart failure", "cardiac failure", "congestive heart"],
+    "angioplasty": ["angioplasty", "stent", "blocked artery", "coronary"],
+    "liver cirrhosis": ["liver cirrhosis", "liver disease", "cirrhosis", "jaundice severe", "liver damage"],
+    "liver transplant": ["liver transplant", "transplant liver"],
+    "liver failure": ["liver failure", "acute liver", "hepatic failure"],
+    "fracture": ["fracture", "broken bone", "broke my", "fractured", "crack in bone", "bone break"],
+    "hip replacement": ["hip replacement", "hip surgery", "hip pain severe"],
+    "knee replacement": ["knee replacement", "knee surgery", "knee operation"],
+    "spinal surgery": ["spinal surgery", "spine surgery", "back surgery", "slipped disc surgery", "discectomy"],
+    "cancer": ["cancer", "tumor", "tumour", "malignant", "chemotherapy", "oncology", "carcinoma"],
+    "stroke": ["stroke", "brain stroke", "paralysis sudden", "face drooping", "slurred speech"],
+    "kidney failure": ["kidney failure", "renal failure", "dialysis", "kidney transplant"],
+    "appendix": ["appendix", "appendicitis", "appendix pain", "right side pain severe"],
+    "gallstone": ["gallstone", "gallbladder", "gall stone", "gall bladder"],
+    "pneumonia": ["pneumonia", "lung infection", "chest infection severe"],
+    "diabetes complications": ["diabetes complications", "diabetic emergency", "sugar very high", "diabetic foot", "neuropathy"]
+  },
+
+  "insurers": {
+    "star health": {
+      "displayName": "Star Health Insurance",
+      "shortCode": "STAR",
+      "plans": ["Comprehensive", "Family Health Optima", "Senior Citizens Red Carpet", "Medi Classic"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC004", "DOC005", "DOC006", "DOC007", "DOC008", "DOC013", "DOC015"],
+      "coveragePercent": 80,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 10,
+      "criticalCoveragePercent": 85,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "heart failure", "angioplasty", "fracture", "hip replacement", "knee replacement", "cancer", "stroke", "appendix", "gallstone", "pneumonia"],
+      "notes": "Pre-authorization required for procedures above Rs 5000. Cardiac and cancer covered under critical illness rider."
+    },
+    "hdfc ergo": {
+      "displayName": "HDFC ERGO Health Insurance",
+      "shortCode": "HDFC",
+      "plans": ["My Health Suraksha", "Optima Secure", "Energy Plan"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC003", "DOC004", "DOC006", "DOC007", "DOC008", "DOC012", "DOC014"],
+      "coveragePercent": 85,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 0,
+      "criticalCoveragePercent": 90,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "angioplasty", "fracture", "knee replacement", "hip replacement", "cancer", "stroke", "kidney failure", "appendix", "gallstone", "spinal surgery"],
+      "notes": "No copay on network hospitals. Critical illness rider covers 36 conditions at 100%."
+    },
+    "icici lombard": {
+      "displayName": "ICICI Lombard Health Insurance",
+      "shortCode": "ICICI",
+      "plans": ["Complete Health Insurance", "Health Advantage Plus", "iHealth"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC003", "DOC005", "DOC006", "DOC008", "DOC013", "DOC015"],
+      "coveragePercent": 75,
+      "cashless": true,
+      "waitingPeriod": "45 days",
+      "copay": 20,
+      "criticalCoveragePercent": 80,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "cancer", "stroke", "kidney failure", "fracture", "appendix"],
+      "notes": "20% copay on OPD. Critical illness lump sum payout available as add-on."
+    },
+    "bajaj allianz": {
+      "displayName": "Bajaj Allianz Health Insurance",
+      "shortCode": "BAJAJ",
+      "plans": ["Health Guard", "Global Health Care", "Silver Health"],
+      "empanelledDoctors": ["DOC001", "DOC004", "DOC005", "DOC006", "DOC007", "DOC008", "DOC014", "DOC015"],
+      "coveragePercent": 80,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 10,
+      "criticalCoveragePercent": 85,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "fracture", "hip replacement", "knee replacement", "cancer", "stroke", "appendix", "gallstone", "liver cirrhosis"],
+      "notes": "Critical illness policy covers 10 major illnesses. Pre-auth needed for planned surgeries."
+    },
+    "ayushman bharat": {
+      "displayName": "Ayushman Bharat (PM-JAY)",
+      "shortCode": "PMJAY",
+      "plans": ["Pradhan Mantri Jan Arogya Yojana"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC004", "DOC005", "DOC006", "DOC007", "DOC008"],
+      "coveragePercent": 100,
+      "cashless": true,
+      "waitingPeriod": "0 days",
+      "copay": 0,
+      "criticalCoveragePercent": 100,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "angioplasty", "fracture", "hip replacement", "knee replacement", "cancer", "stroke", "kidney failure", "appendix", "gallstone", "pneumonia", "liver cirrhosis", "spinal surgery"],
+      "notes": "Covers 1,393 medical packages including all major surgeries. Fully cashless up to Rs 5 lakh/family/year."
+    },
+    "new india assurance": {
+      "displayName": "New India Assurance",
+      "shortCode": "NIA",
+      "plans": ["Mediclaim Policy", "Senior Citizen Mediclaim", "Floater Mediclaim"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC003", "DOC004", "DOC005", "DOC006", "DOC007", "DOC008", "DOC013"],
+      "coveragePercent": 80,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 0,
+      "criticalCoveragePercent": 80,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "fracture", "cancer", "stroke", "appendix", "gallstone", "pneumonia", "knee replacement", "hip replacement"],
+      "notes": "Government insurer. Widely accepted. No sub-limits on room rent in newer policies."
+    },
+    "united india": {
+      "displayName": "United India Insurance",
+      "shortCode": "UII",
+      "plans": ["Individual Mediclaim", "Family Medicare", "Senior Citizen"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC004", "DOC006", "DOC007", "DOC008"],
+      "coveragePercent": 75,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 10,
+      "criticalCoveragePercent": 75,
+      "criticalConditionsCovered": ["heart attack", "fracture", "cancer", "stroke", "appendix", "gallstone"],
+      "notes": "10% copay on all consultations. Covers major surgeries under inpatient benefit."
+    },
+    "max bupa": {
+      "displayName": "Niva Bupa (Max Bupa) Health Insurance",
+      "shortCode": "NIVABUPA",
+      "plans": ["Health Companion", "ReAssure", "Health Premia"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC003", "DOC004", "DOC005", "DOC006", "DOC007", "DOC008", "DOC012", "DOC014", "DOC015"],
+      "coveragePercent": 90,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 0,
+      "criticalCoveragePercent": 95,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "angioplasty", "heart failure", "fracture", "hip replacement", "knee replacement", "spinal surgery", "cancer", "stroke", "kidney failure", "liver cirrhosis", "appendix", "gallstone", "pneumonia", "diabetes complications"],
+      "notes": "Best critical illness coverage in network. ReAssure plan has unlimited restoration. No copay, no sub-limits."
+    },
+    "care health": {
+      "displayName": "Care Health Insurance",
+      "shortCode": "CARE",
+      "plans": ["Care", "Care Freedom", "Care Heart"],
+      "empanelledDoctors": ["DOC001", "DOC002", "DOC003", "DOC005", "DOC006", "DOC007", "DOC008", "DOC013"],
+      "coveragePercent": 80,
+      "cashless": true,
+      "waitingPeriod": "30 days",
+      "copay": 10,
+      "criticalCoveragePercent": 85,
+      "criticalConditionsCovered": ["heart attack", "bypass surgery", "angioplasty", "cancer", "stroke", "fracture", "appendix", "gallstone", "pneumonia"],
+      "notes": "Care Heart plan specifically designed for cardiac patients. 10% copay on specialist visits."
+    },
+    "esi": {
+      "displayName": "ESIC (Employee State Insurance)",
+      "shortCode": "ESI",
+      "plans": ["ESI Medical Benefits"],
+      "empanelledDoctors": ["DOC001", "DOC004", "DOC005", "DOC007", "DOC008"],
+      "coveragePercent": 100,
+      "cashless": true,
+      "waitingPeriod": "0 days",
+      "copay": 0,
+      "criticalCoveragePercent": 100,
+      "criticalConditionsCovered": ["fracture", "appendix", "gallstone", "pneumonia"],
+      "notes": "For salaried employees earning below Rs 21,000/month. Covers major surgeries but limited specialist network."
+    }
+  },
+
+  "doctors": {
+    "DOC001": { "name": "Dr. Arvind Sharma",    "specialty": "General Physician",    "fee": 500  },
+    "DOC002": { "name": "Dr. Rajesh Mehta",     "specialty": "Cardiologist",          "fee": 1200 },
+    "DOC003": { "name": "Dr. Priya Kapoor",     "specialty": "Dermatologist",         "fee": 800  },
+    "DOC004": { "name": "Dr. Suresh Verma",     "specialty": "Orthopedic Surgeon",    "fee": 1000 },
+    "DOC005": { "name": "Dr. Kavitha Rao",      "specialty": "ENT Specialist",        "fee": 700  },
+    "DOC006": { "name": "Dr. Anil Gupta",       "specialty": "Neurologist",           "fee": 1500 },
+    "DOC007": { "name": "Dr. Vikram Singh",     "specialty": "Gastroenterologist",    "fee": 900  },
+    "DOC008": { "name": "Dr. Sunita Patel",     "specialty": "Pediatrician",          "fee": 600  },
+    "DOC012": { "name": "Dr. Pooja Menon",      "specialty": "Psychiatrist",          "fee": 1200 },
+    "DOC013": { "name": "Dr. Harish Nambiar",   "specialty": "Dentist",               "fee": 600  },
+    "DOC014": { "name": "Dr. Ananya Krishnan",  "specialty": "Gynecologist",          "fee": 1000 },
+    "DOC015": { "name": "Dr. Sanjay Reddy",     "specialty": "Ophthalmologist",       "fee": 900  },
+    "DOC017B": { "name": "Dr. Ravi Kumar",      "specialty": "Endocrinologist",       "fee": 1300 },
+    "DOC018B": { "name": "Dr. Meena Joshi",     "specialty": "Pulmonologist",         "fee": 1000 },
+    "DOC019B": { "name": "Dr. Santosh Nair",    "specialty": "Oncologist",            "fee": 1800 },
+    "DOC021B": { "name": "Dr. Prashanth Hegde", "specialty": "Nephrologist",          "fee": 1400 }
+  }
+}
