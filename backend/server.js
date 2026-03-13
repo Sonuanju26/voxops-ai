@@ -29,6 +29,154 @@ app.get("/api/bookings", (req, res) => {
   }
 })
 
+// ── API: Aggregated analytics for dashboard ─────────────────────────────────────
+app.get("/api/analytics", (req, res) => {
+  try {
+    const filePath = path.join(__dirname, "bookings.json")
+    if (!fs.existsSync(filePath)) {
+      return res.json({
+        today: {
+          totalBookings: 0,
+          totalRevenue: 0,
+          topDoctor: null,
+          topSymptom: null,
+          byHour: {}
+        },
+        doctors: []
+      })
+    }
+
+    const raw  = fs.readFileSync(filePath, "utf8")
+    const data = JSON.parse(raw)
+    const list = (Array.isArray(data) ? data : (data.bookings || [])).filter(b => b && b.status !== "cancelled")
+
+    const now = new Date()
+    const todayKey = now.toISOString().slice(0, 10) // YYYY-MM-DD
+
+    const normalizeDate = (str) => {
+      if (!str) return null
+      const s = String(str).trim()
+      const lower = s.toLowerCase()
+      if (lower === "today") return todayKey
+
+      // dd-mm-yyyy or dd/mm/yyyy
+      let m = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/)
+      if (m) {
+        const [ , dd, mm, yyyy ] = m
+        const d = new Date(parseInt(yyyy,10), parseInt(mm,10)-1, parseInt(dd,10))
+        if (!isNaN(d.getTime())) return d.toISOString().slice(0,10)
+      }
+
+      // Natural language dates understood by Date()
+      const d = new Date(s)
+      if (!isNaN(d.getTime())) return d.toISOString().slice(0,10)
+      return null
+    }
+
+    const isToday = (b) => {
+      const key = normalizeDate(b.date)
+      return key === todayKey
+    }
+
+    const todayBookings = list.filter(isToday)
+
+    const totalBookings = todayBookings.length
+    const totalRevenue  = todayBookings.reduce((sum, b) => sum + (Number(b.fee) || 0), 0)
+
+    // Top doctor
+    const doctorCounts = {}
+    todayBookings.forEach(b => {
+      const name = b.doctorName || "Unknown"
+      if (!doctorCounts[name]) doctorCounts[name] = 0
+      doctorCounts[name]++
+    })
+    let topDoctor = null
+    Object.entries(doctorCounts).forEach(([name, count]) => {
+      if (!topDoctor || count > topDoctor.count) {
+        topDoctor = { name, count }
+      }
+    })
+
+    // Top symptom word
+    const STOP = new Set(["the","a","an","is","i","have","been","my","and","for"])
+    const wordCounts = {}
+    todayBookings.forEach(b => {
+      const text = (b.symptoms || b.problem || "").toString().toLowerCase()
+      text.split(/[^a-zA-Z]+/).forEach(w => {
+        if (!w || w.length <= 2) return
+        if (STOP.has(w)) return
+        wordCounts[w] = (wordCounts[w] || 0) + 1
+      })
+    })
+    let topSymptom = null
+    Object.entries(wordCounts).forEach(([word, count]) => {
+      if (!topSymptom || count > topSymptom.count) {
+        topSymptom = { word, count }
+      }
+    })
+
+    // By hour (6–22)
+    const parseHour = (b) => {
+      if (b.time) {
+        const t = String(b.time).trim()
+        const m = t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i)
+        if (m) {
+          let h = parseInt(m[1],10)
+          const mer = m[3] ? m[3].toLowerCase() : null
+          if (mer === "pm" && h < 12) h += 12
+          if (mer === "am" && h === 12) h = 0
+          return h
+        }
+      }
+      if (b.bookedAt) {
+        const d = new Date(b.bookedAt)
+        if (!isNaN(d.getTime())) return d.getHours()
+      }
+      return null
+    }
+
+    const byHour = {}
+    todayBookings.forEach(b => {
+      const h = parseHour(b)
+      if (h == null || h < 6 || h > 22) return
+      const key = String(h)
+      byHour[key] = (byHour[key] || 0) + 1
+    })
+
+    // Doctor workload list
+    const doctorStats = {}
+    todayBookings.forEach(b => {
+      const name = b.doctorName || "Unknown"
+      if (!doctorStats[name]) {
+        doctorStats[name] = {
+          name,
+          specialty: b.specialty || "",
+          bookingsToday: 0,
+          revenueToday: 0
+        }
+      }
+      doctorStats[name].bookingsToday += 1
+      doctorStats[name].revenueToday  += Number(b.fee) || 0
+    })
+
+    const doctors = Object.values(doctorStats).sort((a, b) => b.bookingsToday - a.bookingsToday)
+
+    res.json({
+      today: {
+        totalBookings,
+        totalRevenue,
+        topDoctor: topDoctor || null,
+        topSymptom: topSymptom ? topSymptom.word : null,
+        byHour
+      },
+      doctors
+    })
+  } catch (err) {
+    console.error("Error computing analytics:", err.message)
+    res.status(500).json({ error: "Failed to compute analytics" })
+  }
+})
+
 // ── Serve React dashboard (after npm run build) ──────────────────────────────
 const frontendBuild = path.join(__dirname, "../frontend/build")
 if (fs.existsSync(frontendBuild)) {

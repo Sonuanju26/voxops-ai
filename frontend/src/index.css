@@ -1,13 +1,446 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&display=swap');
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #010308;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  font-family: 'DM Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* ── Dashboard tab switcher ─────────────────────────────────────────────── */
+.dashboard-shell {
+  min-height: 100vh;
+  background: #010308;
+  color: #e5f7ff;
+}
+
+.dashboard-tabs-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  gap: 8px;
+  padding: 12px 24px 8px;
+  background: rgba(10, 15, 30, 0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+}
+
+.dashboard-tab-btn {
+  border: 0;
+  outline: none;
+  cursor: pointer;
+  font-family: 'Syne', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: #9ca3af;
+  background: #111827;
+  position: relative;
+  transition: color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.dashboard-tab-btn span {
+  margin-right: 6px;
+}
+
+.dashboard-tab-btn:hover {
+  transform: translateY(-1px);
+}
+
+.dashboard-tab-btn.active {
+  color: #00d4aa;
+  background: linear-gradient(135deg, #020617, #111827);
+  box-shadow: 0 0 0 1px rgba(0, 212, 170, 0.5), 0 14px 30px rgba(0, 0, 0, 0.6);
+}
+
+.dashboard-tab-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: -3px;
+  height: 2px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 50% 100%, #00d4aa, transparent);
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.9);
+}
+
+.dashboard-tab-panel {
+  animation: dashTabFade 0.25s ease-out;
+}
+
+@keyframes dashTabFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Shared live indicators & pulses ────────────────────────────────────── */
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Syne', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: rgba(16, 185, 129, 0.16);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.6);
+}
+
+.live-dot-green,
+.live-dot-red {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.live-dot-green {
+  background: #00d4aa;
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.8);
+  animation: livePulseGreen 1.6s ease-out infinite;
+}
+
+.live-dot-red {
+  background: #ff6b6b;
+  box-shadow: 0 0 10px rgba(255, 107, 107, 0.85);
+  animation: livePulseRed 1.6s ease-out infinite;
+}
+
+@keyframes livePulseGreen {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes livePulseRed {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(1.3);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Analytics panel ─────────────────────────────────────────────────────── */
+.analytics-root {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #111827 0, #020617 55%, #000 100%);
+  color: #e5f7ff;
+  padding: 24px 28px 40px;
+  font-family: 'Syne', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.analytics-grid {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.analytics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.analytics-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.analytics-subtitle {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.analytics-stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.analytics-stat-card {
+  position: relative;
+  background: #111827;
+  border-radius: 18px;
+  padding: 16px 18px 18px;
+  border: 1px solid #1f2937;
+  overflow: hidden;
+  cursor: default;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.analytics-stat-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid transparent;
+  background: linear-gradient(120deg, rgba(34, 197, 190, 0.45), rgba(244, 114, 182, 0.0), rgba(56, 189, 248, 0.45));
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.analytics-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75);
+  border-color: rgba(45, 212, 191, 0.8);
+}
+
+.analytics-stat-card:hover::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.analytics-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.analytics-stat-value {
+  font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.analytics-stat-caption {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.analytics-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr);
+  gap: 20px;
+}
+
+.analytics-card {
+  background: #020617;
+  border-radius: 18px;
+  border: 1px solid #1f2937;
+  padding: 14px 16px 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.9);
+}
+
+.analytics-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.analytics-card-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.analytics-empty {
+  padding: 28px 10px;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.analytics-doctor-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.analytics-doctor-table thead tr {
+  text-align: left;
+  color: #6b7280;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.analytics-doctor-table th,
+.analytics-doctor-table td {
+  padding: 6px 4px;
+}
+
+.analytics-doctor-table tbody tr:nth-child(odd) {
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.analytics-doctor-table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.analytics-doctor-table tbody tr:hover {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.analytics-mono {
+  font-family: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+}
+
+/* ── Heatmap calendar ───────────────────────────────────────────────────── */
+.heatmap-root {
+  min-height: 100vh;
+  background: #020617;
+  color: #e5f7ff;
+  padding: 24px 28px 40px;
+  font-family: 'Syne', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.heatmap-grid-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.heatmap-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.heatmap-sub {
+  font-size: 11px;
+  color: #6b7280;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.heatmap-table {
+  border-collapse: collapse;
+}
+
+.heatmap-th,
+.heatmap-td {
+  text-align: center;
+}
+
+.heatmap-hour-label {
+  font-size: 11px;
+  color: #6b7280;
+  padding-right: 8px;
+  white-space: nowrap;
+}
+
+.heatmap-date-label {
+  font-size: 11px;
+  color: #9ca3af;
+  padding-bottom: 6px;
+}
+
+.heatmap-date-label span {
+  display: block;
+}
+
+.heat-cell {
+  width: 52px;
+  height: 44px;
+  border-radius: 10px;
+  margin: 2px;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.8);
+}
+
+.heat-cell:hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.6), 0 10px 22px rgba(0, 0, 0, 0.9);
+}
+
+.heat-cell-full {
+  animation: heatPulseFull 1.8s ease-out infinite;
+}
+
+.heat-cell-new {
+  animation: heatFlashNew 0.7s ease-out;
+}
+
+@keyframes heatPulseFull {
+  0% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.9);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(248, 113, 113, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+  }
+}
+
+@keyframes heatFlashNew {
+  0% {
+    outline: 2px solid #e5f7ff;
+  }
+  100% {
+    outline: 0 solid transparent;
+  }
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 12px;
+}
+
+.heatmap-legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
 }

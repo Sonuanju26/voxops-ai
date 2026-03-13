@@ -1,6 +1,8 @@
 import { useState } from "react"
 import Dashboard from "./Dashboard"
 import VoiceAssistant from "./VoiceAssistant"
+import AnalyticsPanel from "./AnalyticsPanel"
+import HeatmapCalendar from "./HeatmapCalendar"
 
 const navStyle = {
   position: "fixed", bottom: 24, left: "50%",
@@ -15,11 +17,46 @@ const navStyle = {
 
 export default function App() {
   const [page, setPage] = useState("voice")
+  const [dashTab, setDashTab] = useState("bookings")
 
   return (
     <div style={{ background: "#010308", minHeight: "100vh" }}>
-      {page === "voice"     && <VoiceAssistant />}
-      {page === "dashboard" && <Dashboard />}
+      {page === "voice" && <VoiceAssistant />}
+      {page === "dashboard" && (
+        <div className="dashboard-shell">
+          <div className="dashboard-tabs-bar">
+            <button
+              type="button"
+              className={`dashboard-tab-btn${dashTab === "bookings" ? " active" : ""}`}
+              onClick={() => setDashTab("bookings")}
+            >
+              <span aria-hidden="true">📋</span>
+              BOOKINGS
+            </button>
+            <button
+              type="button"
+              className={`dashboard-tab-btn${dashTab === "analytics" ? " active" : ""}`}
+              onClick={() => setDashTab("analytics")}
+            >
+              <span aria-hidden="true">📊</span>
+              ANALYTICS
+            </button>
+            <button
+              type="button"
+              className={`dashboard-tab-btn${dashTab === "heatmap" ? " active" : ""}`}
+              onClick={() => setDashTab("heatmap")}
+            >
+              <span aria-hidden="true">🗓️</span>
+              HEATMAP
+            </button>
+          </div>
+          <div className="dashboard-tab-panel">
+            {dashTab === "bookings" && <Dashboard />}
+            {dashTab === "analytics" && <AnalyticsPanel />}
+            {dashTab === "heatmap" && <HeatmapCalendar />}
+          </div>
+        </div>
+      )}
 
       {/* Bottom nav */}
       <nav style={navStyle}>

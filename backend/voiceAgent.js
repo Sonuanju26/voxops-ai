@@ -159,6 +159,47 @@ function loadBookings() {
   } catch(e) { return [] }
 }
 
+// Count active bookings for a specific doctor/date/time slot
+function getSlotBookingCount(doctorId, date, time) {
+  try {
+    const list = loadBookings()
+    const d = (date || "").toString().trim().toLowerCase()
+    const t = (time || "").toString().trim().toLowerCase()
+    if (!doctorId || !d || !t) return 0
+    return list.filter(b =>
+      b &&
+      b.status !== "cancelled" &&
+      (b.doctorId || "").toString().trim() === doctorId &&
+      (b.date || "").toString().trim().toLowerCase() === d &&
+      (b.time || "").toString().trim().toLowerCase() === t
+    ).length
+  } catch {
+    return 0
+  }
+}
+
+// Very simple next-slot suggestion helper
+function suggestNextSlot(timeStr) {
+  if (!timeStr || typeof timeStr !== "string") return timeStr || ""
+  const raw = timeStr.trim().toUpperCase()
+  if (raw === "4:00 PM" || raw === "04:00 PM") return "4:30 PM"
+
+  const m = raw.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/)
+  if (!m) return timeStr
+  let hour = parseInt(m[1], 10)
+  const minute = parseInt(m[2] || "00", 10)
+  const meridiem = m[3]
+
+  // For this hackathon, just move one hour ahead within same AM/PM window
+  hour = hour + 1
+  if (hour === 12 && meridiem === "AM") hour = 12
+  if (hour > 12) hour = 12
+
+  const hh = hour.toString()
+  const mm = minute.toString().padStart(2, "0")
+  return `${hh}:${mm} ${meridiem}`
+}
+
 function writeBookings(list) {
   fs.writeFileSync(BOOKINGS_FILE, JSON.stringify({ bookings: list }, null, 2))
 }
@@ -751,7 +792,6 @@ Reply *YES* if you are available and we will share your number with the patient.
       }
 
       if (booking && booking.name && booking.doctor) {
-        session.booked = true
         const doc = DOCTORS[booking.doctor] || {}
         const ref = genRef()
         const fullBooking = {
@@ -769,6 +809,23 @@ Reply *YES* if you are available and we will share your number with the patient.
           bookedAt:     new Date().toISOString(),
           source:       "voice"
         }
+
+        // ── Slot conflict awareness ────────────────────────────────────────
+        const slotCount = getSlotBookingCount(fullBooking.doctorId, fullBooking.date, fullBooking.time)
+
+        if (slotCount >= 3) {
+          const suggestedTime = suggestNextSlot(fullBooking.time)
+          if (suggestedTime && suggestedTime !== fullBooking.time) {
+            session.data.newTime = suggestedTime
+          }
+          return `That slot is fully booked. The next available slot for ${fullBooking.doctorName} is ${suggestedTime || fullBooking.time}. Shall I book that instead?`
+        }
+
+        if (slotCount === 2) {
+          return "That slot is almost full — only 1 spot left. Shall I confirm it?"
+        }
+
+        session.booked = true
         saveBooking(fullBooking)
         savePatient(fullBooking.patientPhone, fullBooking.patientName, {
           ref: fullBooking.ref, doctorName: fullBooking.doctorName,

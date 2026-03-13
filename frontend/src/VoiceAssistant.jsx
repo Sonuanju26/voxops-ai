@@ -64,14 +64,7 @@ const WaveBars = ({color, count=5}) => (
 
 // Deepgram TTS voice model per language
 // Only en and es have dedicated Deepgram Aura models — others use browser TTS fallback
-const DEEPGRAM_VOICE = {
-  en: "aura-asteria-en",   // English female
-  hi: "aura-asteria-en",   // Hindi — use English model (Deepgram has no Hindi model yet)
-  ta: "aura-asteria-en",   // Tamil — fallback
-  te: "aura-asteria-en",   // Telugu — fallback
-  kn: "aura-asteria-en",   // Kannada — fallback
-  ml: "aura-asteria-en",   // Malayalam — fallback
-}
+
 
 // Web Speech API recognition codes per language
 const LANGS = {
@@ -469,7 +462,7 @@ export default function VoiceAssistant() {
                 const isDetected = lang === "auto" && detectedLang === k
                 return (
                   <button key={k} onClick={() => { setLang(k); setDetectedLang(null) }} style={{
-                    padding:"4px 10px",borderRadius:12,border:"none",cursor:"pointer",
+                    padding:"4px 10px",borderRadius:12,cursor:"pointer",
                     fontSize:10,fontWeight:700,fontFamily:"'Share Tech Mono',monospace",
                     transition:"all .2s",
                     background: isActive ? "rgba(0,200,255,.25)" : isDetected ? "rgba(0,255,150,.15)" : "rgba(255,255,255,.04)",
