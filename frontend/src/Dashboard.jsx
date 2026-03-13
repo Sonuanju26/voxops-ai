@@ -185,7 +185,7 @@ const StatCard = ({ value, label, icon, accent, trend, trendUp, delay }) => (
 )
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
-export default function Dashboard() {
+export default function Dashboard({ onSelectPatient, onLogout }) {
   const [bookings, setBookings]       = useState([])
   const [loading, setLoading]         = useState(true)
   const [lastRefresh, setLastRefresh] = useState(null)
@@ -193,6 +193,7 @@ export default function Dashboard() {
   const [doctorFilter, setDoctorFilter] = useState("all")
   const [clock, setClock]             = useState("")
   const [isDemo, setIsDemo]           = useState(false)
+  const [patientSearch, setPatientSearch] = useState("")
 
   // Clock
   useEffect(() => {
@@ -335,6 +336,39 @@ export default function Dashboard() {
               cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
               ⟳ Refresh
             </button>
+            {typeof onLogout === "function" && (
+              <button
+                type="button"
+                onClick={onLogout}
+                style={{
+                  background: "transparent",
+                  borderRadius: 999,
+                  border: "1px solid rgba(248,113,113,0.3)",
+                  color: "#fca5a5",
+                  padding: "6px 12px",
+                  cursor: "pointer",
+                  fontFamily: "'Outfit',sans-serif",
+                  fontSize: 11,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(248,113,113,0.7)"
+                  e.currentTarget.style.color = "#fecaca"
+                  e.currentTarget.style.backgroundColor = "rgba(127,29,29,0.25)"
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(248,113,113,0.3)"
+                  e.currentTarget.style.color = "#fca5a5"
+                  e.currentTarget.style.backgroundColor = "transparent"
+                }}
+              >
+                <span aria-hidden="true">⏻</span>
+                <span>Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -366,6 +400,193 @@ export default function Dashboard() {
           <StatCard value={cancelled} label="Cancelled"       icon="❌" accent={C.red}     trend={cancelled}     trendUp={false} delay={3} />
           <StatCard value={emergencies.length} label="Emergencies" icon="🚨" accent={C.red} trend={emergencies.length} trendUp={false} delay={4} />
           <StatCard value={`₹${(totalRevenue/1000).toFixed(1)}k`} label="Revenue (Confirmed)" icon="💰" accent={C.amber} trend="+today" trendUp delay={5} />
+        </div>
+
+        {/* ── REGISTERED PATIENTS ── */}
+        {bookings.length > 0 && (
+          <div style={{ marginBottom: 26 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div>
+                <Mono style={{ fontSize: 9, letterSpacing: 3, color: C.muted }}>
+                  REGISTERED PATIENTS
+                </Mono>
+                <div style={{ marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span style={{
+                    fontSize: 10,
+                    padding: "3px 10px",
+                    borderRadius: 999,
+                    border: `1px solid ${C.border2}`,
+                    background: "rgba(15,23,42,0.9)",
+                    color: C.muted
+                  }}>
+                    {Object.keys(
+                      bookings.reduce((acc, b) => {
+                        const p = (b.patientPhone || "").trim()
+                        if (!p) return acc
+                        acc[p] = true
+                        return acc
+                      }, {})
+                    ).length} patients
+                  </span>
+                </div>
+              </div>
+              <div>
+                <input
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Search by name or phone"
+                  style={{
+                    padding: "7px 11px",
+                    borderRadius: 999,
+                    border: `1px solid ${C.border2}`,
+                    background: "rgba(3,7,18,0.9)",
+                    color: C.text,
+                    fontSize: 11,
+                    minWidth: 220,
+                    outline: "none"
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {(() => {
+                const map = {}
+                bookings.forEach(b => {
+                  const phone = (b.patientPhone || "").trim()
+                  if (!phone) return
+                  if (!map[phone]) map[phone] = []
+                  map[phone].push(b)
+                })
+                const patients = Object.entries(map).map(([phone, items]) => {
+                  const sorted = [...items].sort((a, b) =>
+                    new Date(b.bookedAt || 0) - new Date(a.bookedAt || 0)
+                  )
+                  const latest = sorted[0]
+                  return {
+                    phone,
+                    name: latest.patientName || "Unknown",
+                    latest,
+                    visits: sorted.length
+                  }
+                }).filter(p => {
+                  if (!patientSearch.trim()) return true
+                  const q = patientSearch.toLowerCase()
+                  return (
+                    p.name.toLowerCase().includes(q) ||
+                    p.phone.toLowerCase().includes(q)
+                  )
+                }).sort((a, b) => b.visits - a.visits)
+
+                if (patients.length === 0) {
+                  return (
+                    <div style={{ padding: 16, fontSize: 12, color: C.muted }}>
+                      No patients match this search.
+                    </div>
+                  )
+                }
+
+                return patients.slice(0, 40).map((p, idx) => {
+                  const latestStatus = p.latest.status === "cancelled"
+                    ? "Cancelled"
+                    : (p.latest.rescheduledAt || p.latest.previousDate || p.latest.previousTime)
+                    ? "Rescheduled"
+                    : "Confirmed"
+                  const statusColor =
+                    latestStatus === "Cancelled"
+                      ? C.red
+                      : latestStatus === "Rescheduled"
+                      ? C.amber
+                      : C.green
+                  return (
+                    <div
+                      key={p.phone}
+                      className="row-hover"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        padding: "10px 14px",
+                        borderRadius: 12,
+                        background: C.surface,
+                        border: `1px solid ${C.border}`,
+                        cursor: typeof onSelectPatient === "function" ? "pointer" : "default",
+                        transition: "border-left-color 0.18s ease, transform 0.18s ease",
+                        borderLeft: "3px solid transparent",
+                        animation: `fadeUp .4s ease forwards`,
+                        animationDelay: `${idx * 0.04}s`,
+                        opacity: 0
+                      }}
+                      onClick={() => {
+                        if (typeof onSelectPatient === "function") {
+                          onSelectPatient({ name: p.name, phone: p.phone })
+                        }
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Avatar name={p.name} size={32} radius={10} />
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700 }}>{p.name}</div>
+                          <Mono style={{ fontSize: 11, color: C.muted }}>{p.phone}</Mono>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                        <div style={{ textAlign: "right" }}>
+                          <Mono style={{ fontSize: 11, color: C.text }}>
+                            {p.visits} visit{p.visits > 1 ? "s" : ""}
+                          </Mono>
+                          <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                            {p.latest.doctorName || "—"}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              padding: "3px 8px",
+                              borderRadius: 999,
+                              border: `1px solid ${statusColor}`,
+                              color: statusColor,
+                              fontFamily: "'Space Mono', monospace"
+                            }}
+                          >
+                            {latestStatus}
+                          </span>
+                        </div>
+                        {typeof onSelectPatient === "function" && (
+                          <button
+                            type="button"
+                            style={{
+                              borderRadius: 999,
+                              padding: "5px 10px",
+                              fontSize: 11,
+                              border: `1px solid ${C.accent}`,
+                              background: "transparent",
+                              color: C.accent,
+                              cursor: "pointer",
+                              fontFamily: "'Outfit',sans-serif",
+                              transition: "background-color 0.18s ease, color 0.18s ease"
+                            }}
+                          >
+                            View Details →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Divider before bookings table */}
+        <div style={{ margin: "4px 0 14px", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
+          <Mono style={{ fontSize: 9, color: C.muted, letterSpacing: 3 }}>
+            ALL BOOKINGS
+          </Mono>
+          <div style={{ flex: 1, height: 1, background: C.border }} />
         </div>
 
         {/* ── MAIN TWO COL ── */}
