@@ -14,17 +14,11 @@
       "specialty": "General Physician",
       "qualification": "MBBS, MD",
       "experience": "15 years",
-      "contact": "+91-98100-11111",
-      "conditions": ["fever","cold","cough","fatigue","general","checkup","body pain","headache","weakness","flu","viral"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["fever","cold","cough","fatigue","checkup","body pain","weakness","flu","viral","vomiting","loose motion","diarrhea","dehydration","loss of appetite","general checkup","routine checkup","blood sugar","general","not feeling well","weakness","tiredness","headache","mild headache","body ache"],
       "available_days": ["monday","tuesday","wednesday","thursday","friday","saturday"],
-      "slots": {
-        "monday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "tuesday":   ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "thursday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "friday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
-      },
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"thursday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
       "fee": 500
     },
     {
@@ -33,14 +27,11 @@
       "specialty": "Cardiologist",
       "qualification": "MBBS, MD, DM (Cardiology)",
       "experience": "20 years",
-      "contact": "+91-98100-22222",
-      "conditions": ["heart","chest pain","blood pressure","bp","palpitations","cardiac","shortness of breath","cholesterol"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["heart attack","heart pain","chest pain","chest tightness","blood pressure","high bp","low bp","palpitations","irregular heartbeat","cardiac","shortness of breath","cholesterol","heart disease","heart failure","blocked artery","angioplasty","heart problem","heart issue","heart rate","racing heart"],
       "available_days": ["monday","wednesday","friday"],
-      "slots": {
-        "monday":    ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],
-        "wednesday": ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],
-        "friday":    ["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"]
-      },
+      "slots": { "monday":["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],"wednesday":["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"],"friday":["10:00 AM","11:00 AM","3:00 PM","4:00 PM","5:00 PM"] },
       "fee": 1200
     },
     {
@@ -49,14 +40,11 @@
       "specialty": "Dermatologist",
       "qualification": "MBBS, MD (Dermatology)",
       "experience": "12 years",
-      "contact": "+91-98100-33333",
-      "conditions": ["skin","rash","acne","allergy","itching","eczema","hair loss","psoriasis","fungal","pigmentation"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["skin rash","skin problem","acne","pimples","allergy","skin allergy","itching","eczema","hair loss","hair fall","psoriasis","fungal infection","skin pigmentation","dark spots","dandruff","dry skin","oily skin","skin infection","hives","urticaria","rash","skin","pimple","spots"],
       "available_days": ["tuesday","thursday","saturday"],
-      "slots": {
-        "tuesday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],
-        "thursday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],
-        "saturday": ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
-      },
+      "slots": { "tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],"thursday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
       "fee": 800
     },
     {
@@ -65,15 +53,11 @@
       "specialty": "Orthopedic Surgeon",
       "qualification": "MBBS, MS (Ortho)",
       "experience": "18 years",
-      "contact": "+91-98100-44444",
-      "conditions": ["bone","joint","knee","back pain","spine","fracture","shoulder","arthritis","sports injury","slip disc"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["bone pain","joint pain","knee pain","back pain","lower back pain","spine problem","fracture","broken bone","shoulder pain","arthritis","sports injury","slip disc","muscle pain","leg pain","hip pain","neck pain","swollen joint","stiff joints","bone","joint","knee","back","shoulder","spine"],
       "available_days": ["monday","tuesday","thursday","friday"],
-      "slots": {
-        "monday":   ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "tuesday":  ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "thursday": ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],
-        "friday":   ["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"]
-      },
+      "slots": { "monday":["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],"tuesday":["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],"thursday":["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","2:00 PM","3:00 PM","4:00 PM"] },
       "fee": 1000
     },
     {
@@ -82,15 +66,11 @@
       "specialty": "ENT Specialist",
       "qualification": "MBBS, MS (ENT)",
       "experience": "10 years",
-      "contact": "+91-98100-55555",
-      "conditions": ["ear","nose","throat","sinus","hearing","tonsil","snoring","nasal","adenoid","vertigo"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["ear pain","ear infection","hearing loss","nose block","runny nose","nose bleeding","throat pain","sore throat","sinus","sinusitis","tonsils","snoring","nasal polyp","adenoid","ringing in ear","loss of smell","loss of taste","voice problem","hoarseness","ear","nose","throat","ent"],
       "available_days": ["monday","wednesday","friday","saturday"],
-      "slots": {
-        "monday":    ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
-        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
-        "friday":    ["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],
-        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
-      },
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","4:00 PM","5:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
       "fee": 700
     },
     {
@@ -99,13 +79,11 @@
       "specialty": "Neurologist",
       "qualification": "MBBS, MD, DM (Neurology)",
       "experience": "22 years",
-      "contact": "+91-98100-66666",
-      "conditions": ["migraine","headache","nerve","seizure","memory","dizziness","brain","epilepsy","stroke","parkinson","numbness"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["migraine","severe headache","chronic headache","nerve pain","seizure","memory loss","forgetfulness","dizziness","epilepsy","parkinson","numbness","tremors","paralysis","fits","fainting","blackout","nerve weakness","spinal cord","vertigo","brain tumor","nerve","neuro"],
       "available_days": ["tuesday","thursday"],
-      "slots": {
-        "tuesday":  ["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "thursday": ["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"]
-      },
+      "slots": { "tuesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"],"thursday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM","5:00 PM"] },
       "fee": 1500
     },
     {
@@ -114,14 +92,11 @@
       "specialty": "Gastroenterologist",
       "qualification": "MBBS, MD, DM (Gastro)",
       "experience": "14 years",
-      "contact": "+91-98100-77777",
-      "conditions": ["stomach","digestion","acidity","ibs","liver","constipation","nausea","vomiting","gastric","ulcer","bloating"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["stomach pain","stomach ache","indigestion","acidity","acid reflux","ibs","irritable bowel","liver problem","constipation","nausea","gastric","ulcer","bloating","gas problem","abdominal pain","jaundice","fatty liver","stomach infection","food poisoning","stomach","gastro","digestion","abdomen"],
       "available_days": ["monday","wednesday","friday"],
-      "slots": {
-        "monday":    ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],
-        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],
-        "friday":    ["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"]
-      },
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"] },
       "fee": 900
     },
     {
@@ -130,18 +105,142 @@
       "specialty": "Pediatrician",
       "qualification": "MBBS, MD (Pediatrics)",
       "experience": "16 years",
-      "contact": "+91-98100-88888",
-      "conditions": ["child","baby","infant","kids","vaccination","growth","pediatric","newborn","fever child","child cough"],
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["child fever","child cold","child cough","baby problem","infant","kids health","vaccination","child growth","pediatric","newborn","child vomiting","child diarrhea","child rash","child not eating","child allergy","child asthma","child ear pain","child stomach pain","my child","my son","my daughter","baby","kid","toddler"],
       "available_days": ["monday","tuesday","wednesday","thursday","friday","saturday"],
-      "slots": {
-        "monday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "tuesday":   ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "wednesday": ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "thursday":  ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "friday":    ["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],
-        "saturday":  ["9:00 AM","10:00 AM","11:00 AM","12:00 PM"]
-      },
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],"tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],"thursday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM","5:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
       "fee": 600
+    },
+    {
+      "id": "DOC012",
+      "name": "Dr. Pooja Menon",
+      "specialty": "Psychiatrist",
+      "qualification": "MBBS, MD (Psychiatry)",
+      "experience": "13 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["mental health","mental issue","anxiety","depression","stress","panic attack","mood swings","bipolar","ocd","phobia","insomnia","sleep problem","suicidal thoughts","self harm","eating disorder","addiction","anger issues","emotional problem","feeling low","overthinking","burnout","ptsd","trauma","loneliness","social anxiety","mental","psychiatric","mood"],
+      "available_days": ["monday","wednesday","friday"],
+      "slots": { "monday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"wednesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"friday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"] },
+      "fee": 1200
+    },
+    {
+      "id": "DOC013",
+      "name": "Dr. Harish Nambiar",
+      "specialty": "Dentist",
+      "qualification": "BDS, MDS (Oral Surgery)",
+      "experience": "11 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["tooth pain","toothache","tooth decay","cavity","gum pain","gum bleeding","gum swelling","jaw pain","mouth pain","broken tooth","tooth sensitivity","wisdom tooth","root canal","tooth extraction","dental pain","bad breath","mouth infection","dental checkup","teeth cleaning","braces","tooth abscess","dental","teeth","tooth","gum","mouth","oral"],
+      "available_days": ["monday","tuesday","wednesday","thursday","friday","saturday"],
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"thursday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
+      "fee": 600
+    },
+    {
+      "id": "DOC014",
+      "name": "Dr. Ananya Krishnan",
+      "specialty": "Gynecologist",
+      "qualification": "MBBS, MD (OBG)",
+      "experience": "14 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["periods","irregular periods","missed period","heavy bleeding","menstrual pain","period cramps","pcos","pcod","white discharge","vaginal discharge","pregnancy","pregnancy checkup","prenatal","postnatal","delivery","fertility","infertility","ovarian cyst","uterus problem","breast pain","breast lump","menopause","hormonal imbalance","vaginal infection","family planning","gynaecology","women health","gynec"],
+      "available_days": ["monday","tuesday","thursday","friday","saturday"],
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"thursday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
+      "fee": 900
+    },
+    {
+      "id": "DOC015",
+      "name": "Dr. Sanjay Reddy",
+      "specialty": "Ophthalmologist",
+      "qualification": "MBBS, MS (Ophthalmology)",
+      "experience": "16 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["eye pain","eye problem","blurry vision","weak eyesight","red eye","watery eye","dry eyes","itchy eyes","eye infection","conjunctivitis","cataract","glaucoma","retina problem","floaters","eye strain","screen strain","double vision","night blindness","eye allergy","spectacles","lens power","eye checkup","swollen eye","loss of vision","eye injury","eye","vision","sight","glasses"],
+      "available_days": ["tuesday","wednesday","friday","saturday"],
+      "slots": { "tuesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","2:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
+      "fee": 800
+    },
+    {
+      "id": "DOC016",
+      "name": "Dr. Deepak Malhotra",
+      "specialty": "Urologist",
+      "qualification": "MBBS, MS (Urology)",
+      "experience": "19 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["urinary problem","urine problem","frequent urination","painful urination","burning urination","blood in urine","kidney stone","kidney stones","kidney pain","kidney problem","bladder problem","uti","urinary tract infection","prostate","erectile dysfunction","incontinence","urine leakage","enlarged prostate","renal stone","kidney","urinary","urology","urine","bladder","renal","urination","stone in kidney","stones"],
+      "available_days": ["monday","wednesday","thursday","friday"],
+      "slots": { "monday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"wednesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"thursday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"friday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"] },
+      "fee": 1100
+    },
+    {
+      "id": "DOC017B",
+      "name": "Dr. Ravi Kumar",
+      "specialty": "Endocrinologist",
+      "qualification": "MBBS, MD, DM (Endocrinology)",
+      "experience": "14 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["thyroid problem","hypothyroidism","hyperthyroidism","thyroid swelling","diabetes","type 1 diabetes","type 2 diabetes","high blood sugar","low blood sugar","insulin problem","weight gain","weight loss","hormone problem","hormonal imbalance","growth problem","osteoporosis","calcium deficiency","vitamin d deficiency","metabolic disorder","obesity","thyroid","endocrine","hormone","sugar"],
+      "available_days": ["tuesday","thursday","saturday"],
+      "slots": { "tuesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"thursday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
+      "fee": 1300
+    },
+    {
+      "id": "DOC018B",
+      "name": "Dr. Meena Joshi",
+      "specialty": "Pulmonologist",
+      "qualification": "MBBS, MD (Pulmonology)",
+      "experience": "12 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["breathing problem","breathlessness","difficulty breathing","asthma","asthma attack","wheezing","chronic cough","persistent cough","lung problem","lung infection","pneumonia","bronchitis","tuberculosis","tb","copd","chest congestion","chest infection","sputum","phlegm","coughing blood","sleep apnea","oxygen level low","covid","post covid","breathing","lungs","respiratory","breath"],
+      "available_days": ["monday","wednesday","friday"],
+      "slots": { "monday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],"wednesday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"],"friday":["9:00 AM","10:00 AM","11:00 AM","3:00 PM","4:00 PM"] },
+      "fee": 1000
+    },
+    {
+      "id": "DOC019B",
+      "name": "Dr. Santosh Nair",
+      "specialty": "Oncologist",
+      "qualification": "MBBS, MD, DM (Oncology)",
+      "experience": "18 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["cancer","tumor","lump","abnormal growth","blood cancer","leukemia","lymphoma","breast cancer","lung cancer","colon cancer","prostate cancer","cervical cancer","skin cancer","liver cancer","stomach cancer","bone cancer","brain tumor","chemotherapy","radiation therapy","cancer checkup","biopsy","unexplained weight loss","night sweats","swollen lymph nodes","oncology"],
+      "available_days": ["tuesday","thursday","friday"],
+      "slots": { "tuesday":["10:00 AM","11:00 AM","12:00 PM","2:00 PM","3:00 PM"],"thursday":["10:00 AM","11:00 AM","12:00 PM","2:00 PM","3:00 PM"],"friday":["10:00 AM","11:00 AM","12:00 PM","2:00 PM","3:00 PM"] },
+      "fee": 1800
+    },
+    {
+      "id": "DOC020B",
+      "name": "Dr. Lakshmi Prasad",
+      "specialty": "Rheumatologist",
+      "qualification": "MBBS, MD, DM (Rheumatology)",
+      "experience": "11 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["rheumatoid arthritis","autoimmune disease","lupus","joint inflammation","joint swelling","morning stiffness","gout","uric acid","ankylosing spondylitis","fibromyalgia","muscle weakness","myositis","inflammatory joint","chronic joint pain","swollen fingers","swollen knuckles","painful joints","rheumatology","uric acid high","gout attack"],
+      "available_days": ["monday","wednesday","saturday"],
+      "slots": { "monday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"wednesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"saturday":["9:00 AM","10:00 AM","11:00 AM","12:00 PM"] },
+      "fee": 1200
+    },
+    {
+      "id": "DOC021B",
+      "name": "Dr. Prashanth Hegde",
+      "specialty": "Nephrologist",
+      "qualification": "MBBS, MD, DM (Nephrology)",
+      "experience": "15 years",
+      "location": "Bangalore - MG Road Branch",
+      "contact": "",
+      "conditions": ["kidney failure","chronic kidney disease","ckd","dialysis","kidney transplant","kidney swelling","protein in urine","creatinine high","urea high","kidney infection","nephrotic syndrome","glomerulonephritis","renal failure","fluid retention","leg swelling","ankle swelling","puffy face","kidney cyst","polycystic kidney","nephrology","nephro"],
+      "available_days": ["tuesday","thursday","friday"],
+      "slots": { "tuesday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"thursday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"],"friday":["10:00 AM","11:00 AM","12:00 PM","3:00 PM","4:00 PM"] },
+      "fee": 1400
     }
   ]
 }

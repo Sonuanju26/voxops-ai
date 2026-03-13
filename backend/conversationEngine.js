@@ -1,16 +1,16 @@
 // conversationEngine.js — Multi-turn conversation using real doctors dataset
 
 const {
-  suggestDoctor,
   getDoctorsList,
   getAvailableSlots,
   isSlotAvailable,
   confirmBooking,
+  cancelBooking,
   findDoctor,
   getHospitalInfo
 } = require("./slotManager")
 
-const { sendConfirmations } = require("./notifier")
+const { sendConfirmations, sendCancellations } = require("./notifier")
 
 const sessions = {}
 
@@ -62,13 +62,78 @@ function freshSession() {
   return {
     step: "idle",
     data: {
-      patientName: null,
-      problem:     null,
-      doctor:      null,   // full doctor object from dataset
-      date:        null,
-      time:        null
+      patientName:      null,
+      problem:          null,
+      doctor:           null,
+      date:             null,
+      time:             null,
+      suggestedDoctors: [],
+      intakeHistory:    []   // ← stores symptom intake Q&A turns for Gemini
     }
   }
+}
+
+// ── Past date validator ───────────────────────────────────────────────────────
+
+function isPastDate(dateStr) {
+  if (!dateStr) return false
+  if (dateStr === "today" || dateStr === "tomorrow") return false
+  if (dateStr.startsWith("this ")) return false
+  const parts = dateStr.split("-")
+  if (parts.length !== 3) return false
+  const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]))
+  date.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return date < today
+}
+
+// ── suggestDoctors: scored matching — avoids false positives ─────────────────
+
+function suggestDoctors(problem) {
+  const fs   = require("fs")
+  const path = require("path")
+  const file = path.join(process.cwd(), "doctors.json")
+  const { doctors } = JSON.parse(fs.readFileSync(file, "utf8"))
+  const text = problem.toLowerCase()
+
+  const scored = doctors
+    .map(d => {
+      const matchCount = d.conditions.filter(c => text.includes(c)).length
+      return { doctor: d, score: matchCount }
+    })
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+
+  if (scored.length === 0) return []
+
+  const topScore = scored[0].score
+  return scored
+    .filter(entry => entry.score >= topScore - 1)
+    .map(entry => entry.doctor)
+}
+
+// ── suggestDoctorsBySpecialty: used after Gemini confirms specialty ───────────
+
+function suggestDoctorsBySpecialty(specialty) {
+  const fs   = require("fs")
+  const path = require("path")
+  const file = path.join(process.cwd(), "doctors.json")
+  const { doctors } = JSON.parse(fs.readFileSync(file, "utf8"))
+  return doctors.filter(d =>
+    d.specialty.toLowerCase() === specialty.toLowerCase()
+  )
+}
+
+// ── Format a list of doctors for display ─────────────────────────────────────
+
+function formatDoctorOptions(doctors) {
+  return doctors.map((d, i) =>
+    `${i + 1}. ${d.name} — ${d.specialty}\n` +
+    `   📍 ${d.location || "Main Branch"}\n` +
+    `   🎓 ${d.qualification} | ${d.experience} exp\n` +
+    `   💰 Fee: ₹${d.fee} | 📅 Available: ${d.available_days.join(", ")}`
+  ).join("\n\n")
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -86,8 +151,8 @@ function handleConversation(sessionId, userMessage) {
     const isBooking    = bookKeywords.some(k => text.includes(k))
 
     if (isBooking) {
-      // Extract anything already given upfront
-      data.date = extractDate(text) || null
+      const extractedDate = extractDate(text)
+      data.date = (extractedDate && !isPastDate(extractedDate)) ? extractedDate : null
       data.time = extractTime(text) || null
       const namedDoc = findDoctor(text)
       if (namedDoc) data.doctor = namedDoc
@@ -117,7 +182,7 @@ function handleConversation(sessionId, userMessage) {
       }
     }
 
-    return null // pass to Gemini
+    return null
   }
 
   // ── ASK NAME ─────────────────────────────────────────────────────────────
@@ -142,7 +207,6 @@ function handleConversation(sessionId, userMessage) {
       }
     }
     let phone = phoneMatch[0]
-    // Add country code if not present
     if (phone.length === 10) phone = "91" + phone
     data.phone   = phone
     session.step = "ask_problem"
@@ -155,10 +219,11 @@ function handleConversation(sessionId, userMessage) {
 
   // ── ASK PROBLEM ──────────────────────────────────────────────────────────
   if (session.step === "ask_problem") {
-    data.problem = userMessage.trim()
+    const rawProblem = userMessage.trim()
 
-    // If doctor already chosen upfront, skip suggestion
+    // If doctor already chosen upfront, skip intake entirely
     if (data.doctor) {
+      data.problem = rawProblem
       session.step = data.date ? "ask_time" : "ask_date"
       const nextReply = data.date
         ? `Got it! Now let me check available time slots for ${data.doctor.name} on ${data.date}...\n\n` + getSlotsReply(data.doctor.id, data.date)
@@ -166,26 +231,65 @@ function handleConversation(sessionId, userMessage) {
       return { reply: nextReply, intent: "book", step: session.step }
     }
 
-    const suggested = suggestDoctor(data.problem)
-    if (suggested) {
-      data.doctor  = suggested
-      session.step = "confirm_doctor"
+    // Store first symptom message and move to intake step
+    // Return null so server.js hands off to Gemini intake
+    data.intakeHistory = [{ role: "user", content: rawProblem }]
+    session.step = "symptom_intake"
+    return null
+  }
+
+  // ── SYMPTOM INTAKE (Gemini multi-turn) ────────────────────────────────────
+  // Each user reply during intake gets appended to history and passed to Gemini
+  if (session.step === "symptom_intake") {
+    data.intakeHistory.push({ role: "user", content: userMessage.trim() })
+    return null  // hand off to server.js → Gemini intake
+  }
+
+  // ── PICK DOCTOR (from multiple suggestions) ───────────────────────────────
+  if (session.step === "pick_doctor") {
+    const list = data.suggestedDoctors
+
+    const numMatch = text.match(/^(\d+)$/)
+    if (numMatch) {
+      const index = parseInt(numMatch[1]) - 1
+      if (index >= 0 && index < list.length) {
+        data.doctor           = list[index]
+        data.suggestedDoctors = []
+        session.step          = data.date ? "ask_time" : "ask_date"
+        const reply = data.date
+          ? getSlotsReply(data.doctor.id, data.date)
+          : `Great choice! 👍\n\n*${data.doctor.name}* (${data.doctor.specialty}) selected.\n📅 Available days: ${data.doctor.available_days.join(", ")}\n\nWhat date would you like the appointment?`
+        return { reply, intent: "book", step: session.step }
+      }
       return {
-        reply:  `Based on your concern, I'd recommend:\n\n` +
-                `👨‍⚕️ ${suggested.name} — ${suggested.specialty}\n` +
-                `🎓 ${suggested.qualification} | ${suggested.experience} experience\n` +
-                `💰 Consultation Fee: ₹${suggested.fee}\n` +
-                `📞 Contact: ${suggested.contact}\n` +
-                `📅 Available: ${suggested.available_days.join(", ")}\n\n` +
-                `Would you like to book with ${suggested.name}? (yes / no)\n\nOr type "list" to see all doctors.`,
+        reply:  `Please enter a number between 1 and ${list.length}.`,
         intent: "book",
         step:   session.step
       }
     }
 
-    session.step = "ask_doctor"
+    const namedDoc = findDoctor(text)
+    if (namedDoc) {
+      data.doctor           = namedDoc
+      data.suggestedDoctors = []
+      session.step          = data.date ? "ask_time" : "ask_date"
+      const reply = data.date
+        ? getSlotsReply(data.doctor.id, data.date)
+        : `${data.doctor.name} selected! 👍\n\n📅 Available days: ${data.doctor.available_days.join(", ")}\n\nWhat date would you like?`
+      return { reply, intent: "book", step: session.step }
+    }
+
+    if (text.includes("list") || text.includes("all")) {
+      session.step = "ask_doctor"
+      return {
+        reply:  `Here are all our doctors:\n\n${getDoctorsList()}\n\nWhich doctor would you like to consult?`,
+        intent: "book",
+        step:   session.step
+      }
+    }
+
     return {
-      reply:  `Here are our available doctors:\n\n${getDoctorsList()}\n\nWhich doctor would you like to consult?`,
+      reply:  `Please reply with a number (e.g. *1*, *2*) or the doctor's name to select.\n\n${formatDoctorOptions(list)}`,
       intent: "book",
       step:   session.step
     }
@@ -252,6 +356,13 @@ function handleConversation(sessionId, userMessage) {
   if (session.step === "ask_date") {
     const date = extractDate(text)
     if (date) {
+      if (isPastDate(date)) {
+        return {
+          reply:  `❌ That date has already passed. Please choose a future date.\n\nTry: tomorrow, this Monday, or a date like 29-07-2026`,
+          intent: "book",
+          step:   session.step
+        }
+      }
       data.date    = date
       session.step = "ask_time"
       return {
@@ -271,7 +382,6 @@ function handleConversation(sessionId, userMessage) {
   if (session.step === "ask_time") {
     const time = extractTime(text)
     if (time) {
-      // ✅ CHECK SLOT AVAILABILITY
       const available = isSlotAvailable(data.doctor.id, data.date, time)
       if (!available) {
         const freeSlots = getAvailableSlots(data.doctor.id, data.date)
@@ -299,6 +409,7 @@ function handleConversation(sessionId, userMessage) {
                 `👤 Patient   : ${data.patientName}\n` +
                 `🩺 Problem   : ${data.problem}\n` +
                 `👨‍⚕️ Doctor    : ${data.doctor.name} (${data.doctor.specialty})\n` +
+                `📍 Location  : ${data.doctor.location || "Main Branch"}\n` +
                 `💰 Fee       : ₹${data.doctor.fee}\n` +
                 `📅 Date      : ${data.date}\n` +
                 `⏰ Time      : ${data.time}\n\n` +
@@ -321,15 +432,15 @@ function handleConversation(sessionId, userMessage) {
 
     if (isYes) {
       const result = confirmBooking({
-        patientName: data.patientName,
+        patientName:  data.patientName,
         patientPhone: data.phone,
-        problem:     data.problem,
-        doctorId:    data.doctor.id,
-        doctorName:  data.doctor.name,
-        specialty:   data.doctor.specialty,
-        date:        data.date,
-        time:        data.time,
-        fee:         data.doctor.fee
+        problem:      data.problem,
+        doctorId:     data.doctor.id,
+        doctorName:   data.doctor.name,
+        specialty:    data.doctor.specialty,
+        date:         data.date,
+        time:         data.time,
+        fee:          data.doctor.fee
       })
 
       sessions[sessionId] = freshSession()
@@ -344,7 +455,6 @@ function handleConversation(sessionId, userMessage) {
 
       const hospital = getHospitalInfo()
 
-      // ✅ Send WhatsApp to patient + doctor (non-blocking)
       sendConfirmations({
         ref:          result.ref,
         patientName:  data.patientName,
@@ -357,7 +467,7 @@ function handleConversation(sessionId, userMessage) {
         fee:          data.doctor.fee
       }).then(results => {
         console.log("📱 Patient WhatsApp:", results.patient.success ? "✅ Sent" : "❌ Failed - " + results.patient.error)
-        console.log("📱 Doctor WhatsApp:", results.doctor.success  ? "✅ Sent" : "❌ Failed - " + results.doctor.error)
+        console.log("📱 Doctor WhatsApp:",  results.doctor.success  ? "✅ Sent" : "❌ Failed - " + results.doctor.error)
       }).catch(err => console.error("Notification error:", err.message))
 
       return {
@@ -365,10 +475,11 @@ function handleConversation(sessionId, userMessage) {
                 `📋 Booking Ref : ${result.ref}\n` +
                 `👤 Patient     : ${data.patientName}\n` +
                 `👨‍⚕️ Doctor      : ${data.doctor.name} (${data.doctor.specialty})\n` +
+                `📍 Location    : ${data.doctor.location || "Main Branch"}\n` +
                 `📅 Date        : ${data.date}\n` +
                 `⏰ Time        : ${data.time}\n` +
                 `💰 Fee         : ₹${data.doctor.fee}\n` +
-                `🏥 Location    : ${hospital.address}\n` +
+                `🏥 Address     : ${hospital.address}\n` +
                 `📞 Hospital    : ${hospital.contact}\n\n` +
                 `📱 Confirmation WhatsApp sent to patient & doctor!\n` +
                 `Please arrive 10 minutes early. Is there anything else I can help you with? 😊`,
@@ -394,10 +505,34 @@ function handleConversation(sessionId, userMessage) {
   if (session.step === "cancel_confirm") {
     const refMatch = text.match(/vx\d{6}/i)
     if (refMatch) {
-      const { bookings } = require("./slotManager").getHospitalInfo
+      const ref    = refMatch[0].toUpperCase()
+      const result = cancelBooking(ref)
+
+      if (!result.success) {
+        return {
+          reply:  `❌ ${result.message}\n\nPlease double-check your reference number and try again.`,
+          intent: "cancel",
+          step:   session.step
+        }
+      }
+
       sessions[sessionId] = freshSession()
+
+      sendCancellations(result.booking)
+        .then(r => {
+          console.log("📱 Patient cancel WhatsApp:", r.patient.success ? "✅ Sent" : "❌ " + r.patient.error)
+          console.log("📱 Doctor cancel WhatsApp:",  r.doctor.success  ? "✅ Sent" : "❌ " + r.doctor.error)
+        })
+        .catch(err => console.error("Cancellation notification error:", err.message))
+
       return {
-        reply:  `✅ Appointment ${refMatch[0].toUpperCase()} has been cancelled successfully. Is there anything else I can help you with?`,
+        reply:  `✅ Appointment *${ref}* has been successfully cancelled.\n\n` +
+                `👤 Patient : ${result.booking.patientName}\n` +
+                `👨‍⚕️ Doctor  : ${result.booking.doctorName}\n` +
+                `📅 Date    : ${result.booking.date}\n` +
+                `⏰ Time    : ${result.booking.time}\n\n` +
+                `📱 Cancellation message sent to both patient and doctor.\n\n` +
+                `Is there anything else I can help you with?`,
         intent: "cancelled",
         step:   "idle"
       }
@@ -421,7 +556,47 @@ function getSlotsReply(doctorId, date) {
   return `✅ Available slots on ${date}:\n\n${freeSlots.join("  |  ")}\n\nWhat time would you prefer?`
 }
 
-function getSession(sessionId)  { return sessions[sessionId] || null }
+// ── Called by server.js after Gemini confirms a specialty ────────────────────
+function handleSymptomResolved(sessionId, resolvedSpecialty, intakeSummary) {
+  const session = sessions[sessionId]
+  if (!session) return null
+
+  const data   = session.data
+  data.problem = intakeSummary || resolvedSpecialty
+
+  const matched = suggestDoctorsBySpecialty(resolvedSpecialty)
+
+  if (matched.length === 0) return null
+
+  if (matched.length === 1) {
+    const suggested  = matched[0]
+    data.doctor      = suggested
+    session.step     = "confirm_doctor"
+    return {
+      reply:  `Based on everything you've described, I'd recommend:\n\n` +
+              `👨‍⚕️ ${suggested.name} — ${suggested.specialty}\n` +
+              `📍 ${suggested.location || "Main Branch"}\n` +
+              `🎓 ${suggested.qualification} | ${suggested.experience} experience\n` +
+              `💰 Consultation Fee: ₹${suggested.fee}\n` +
+              `📅 Available: ${suggested.available_days.join(", ")}\n\n` +
+              `Would you like to book with ${suggested.name}? (yes / no)\n\nOr type "list" to see all doctors.`,
+      intent: "book",
+      step:   session.step
+    }
+  }
+
+  data.suggestedDoctors = matched
+  session.step          = "pick_doctor"
+  return {
+    reply:  `Based on everything you've described, here are the best matching doctors:\n\n` +
+            `${formatDoctorOptions(matched)}\n\n` +
+            `Please reply with the number (e.g. *1*, *2*) or the doctor's name to select.`,
+    intent: "book",
+    step:   session.step
+  }
+}
+
+function getSession(sessionId)   { return sessions[sessionId] || null }
 function clearSession(sessionId) { delete sessions[sessionId] }
 
-module.exports = { handleConversation, getSession, clearSession }
+module.exports = { handleConversation, handleSymptomResolved, getSession, clearSession }

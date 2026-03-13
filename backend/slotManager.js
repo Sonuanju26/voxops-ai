@@ -3,9 +3,17 @@
 const fs   = require("fs")
 const path = require("path")
 
-const BASE_DIR      = process.cwd()
+// Always resolve from this module directory to avoid cwd-dependent bugs
+const BASE_DIR      = __dirname
 const DOCTORS_FILE  = path.join(BASE_DIR, "doctors.json")
 const BOOKINGS_FILE = path.join(BASE_DIR, "bookings.json")
+
+function normalizePhone(phone) {
+  if (!phone) return ""
+  const digits = String(phone).replace(/\D/g, "")
+  // Keep last 10 digits for India numbers
+  return digits.length >= 10 ? digits.slice(-10) : digits
+}
 
 function loadDoctors() {
   if (!fs.existsSync(DOCTORS_FILE)) {
@@ -27,14 +35,13 @@ function loadBookings() {
       fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(empty, null, 2))
       return empty
     }
-    const raw  = fs.readFileSync(BOOKINGS_FILE, "utf8").trim()
-    if (!raw)  {
+    const raw = fs.readFileSync(BOOKINGS_FILE, "utf8").trim()
+    if (!raw) {
       const empty = { bookings: [] }
       fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(empty, null, 2))
       return empty
     }
     const data = JSON.parse(raw)
-    // ✅ Ensure bookings array always exists
     if (!data.bookings || !Array.isArray(data.bookings)) {
       data.bookings = []
     }
@@ -137,7 +144,7 @@ function isSlotAvailable(doctorId, date, time) {
     )
   } catch(e) {
     console.error("isSlotAvailable error:", e.message)
-    return true // default to available on error
+    return true
   }
 }
 
@@ -151,11 +158,27 @@ function confirmBooking(bookingData) {
       return { success: false, message: "This slot was just taken. Please choose another time." }
     }
 
-    const ref = "VX" + Math.floor(100000 + Math.random() * 900000)
+    // De-dupe: prevent accidental double-booking for same person/slot
+    const phoneNorm = normalizePhone(bookingData.patientPhone)
+    const duplicate = data.bookings.find(b =>
+      b.status === "confirmed" &&
+      normalizePhone(b.patientPhone) === phoneNorm &&
+      b.doctorId === bookingData.doctorId &&
+      b.date === bookingData.date &&
+      b.time === bookingData.time
+    )
+    if (duplicate) {
+      return { success: true, ref: duplicate.ref, deduped: true }
+    }
+
+    const ref = "APT" + Math.floor(1000 + Math.random() * 9000)
 
     data.bookings.push({
-      ref,
+      id: ref,
+      ref, // keep legacy key for existing UI/flows
       ...bookingData,
+      language: bookingData.language || "en",
+      paymentStatus: bookingData.paymentStatus || "Pending",
       status:   "confirmed",
       bookedAt: new Date().toISOString()
     })
@@ -165,6 +188,41 @@ function confirmBooking(bookingData) {
   } catch(e) {
     console.error("confirmBooking error:", e.message)
     return { success: false, message: "Booking failed due to server error." }
+  }
+}
+
+// ── Cancel booking by ref number ──────────────────────────────────────────────
+function cancelBooking(ref) {
+  try {
+    const data    = loadBookings()
+    const index   = data.bookings.findIndex(
+      b => b.ref.toUpperCase() === ref.toUpperCase() && b.status === "confirmed"
+    )
+
+    if (index === -1) {
+      // Check if ref exists but already cancelled
+      const alreadyCancelled = data.bookings.find(
+        b => b.ref.toUpperCase() === ref.toUpperCase() && b.status === "cancelled"
+      )
+      if (alreadyCancelled) {
+        return { success: false, message: `Booking ${ref} was already cancelled.` }
+      }
+      return { success: false, message: `No confirmed booking found with reference ${ref}.` }
+    }
+
+    // Mark as cancelled and record time
+    data.bookings[index].status      = "cancelled"
+    data.bookings[index].cancelledAt = new Date().toISOString()
+
+    saveBookings(data)
+
+    console.log(`\n🗑️  Booking ${ref} cancelled successfully`)
+
+    // Return the full booking so notifier can send the right details
+    return { success: true, booking: data.bookings[index] }
+  } catch(e) {
+    console.error("cancelBooking error:", e.message)
+    return { success: false, message: "Cancellation failed due to server error." }
   }
 }
 
@@ -180,6 +238,7 @@ module.exports = {
   getAvailableSlots,
   isSlotAvailable,
   confirmBooking,
+  cancelBooking,
   getDayName,
   getHospitalInfo
 }

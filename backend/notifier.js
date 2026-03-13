@@ -99,7 +99,6 @@ function doctorCancelledMsg(booking) {
 async function sendConfirmations(booking) {
   console.log("\n📲 Sending WhatsApp confirmations...")
 
-  // ✅ Use patient's own number if provided, else fallback to .env
   const patientPhone = booking.patientPhone
     ? `whatsapp:+${booking.patientPhone}`
     : process.env.PATIENT_PHONE
@@ -108,8 +107,8 @@ async function sendConfirmations(booking) {
   console.log(`   Doctor phone : ${process.env.DOCTOR_PHONE}`)
 
   const [p, d] = await Promise.all([
-    sendWhatsApp(patientPhone,              patientBookedMsg(booking)),
-    sendWhatsApp(process.env.DOCTOR_PHONE,  doctorBookedMsg(booking))
+    sendWhatsApp(patientPhone,             patientBookedMsg(booking)),
+    sendWhatsApp(process.env.DOCTOR_PHONE, doctorBookedMsg(booking))
   ])
   console.log("Patient:", p.success ? "✅" : "❌ " + p.error)
   console.log("Doctor :", d.success ? "✅" : "❌ " + d.error)
@@ -118,9 +117,18 @@ async function sendConfirmations(booking) {
 
 async function sendCancellations(booking) {
   console.log("\n📲 Sending cancellation notifications...")
+
+  // ✅ Use patient's actual phone from booking record, not hardcoded .env
+  const patientPhone = booking.patientPhone
+    ? `whatsapp:+${booking.patientPhone}`
+    : process.env.PATIENT_PHONE
+
+  console.log(`   Patient phone: ${patientPhone}`)
+  console.log(`   Doctor phone : ${process.env.DOCTOR_PHONE}`)
+
   const [p, d] = await Promise.all([
-    sendWhatsApp(process.env.PATIENT_PHONE, patientCancelledMsg(booking)),
-    sendWhatsApp(process.env.DOCTOR_PHONE,  doctorCancelledMsg(booking))
+    sendWhatsApp(patientPhone,             patientCancelledMsg(booking)),
+    sendWhatsApp(process.env.DOCTOR_PHONE, doctorCancelledMsg(booking))
   ])
   console.log("Patient:", p.success ? "✅" : "❌ " + p.error)
   console.log("Doctor :", d.success ? "✅" : "❌ " + d.error)
