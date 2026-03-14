@@ -206,7 +206,7 @@ app.post("/deepgram-tts", async (req, res) => {
     const body   = JSON.stringify({ text: clean })
     const opts   = {
       hostname: "api.deepgram.com",
-      path:     "/v1/speak?model=aura-asteria-en&encoding=mp3",
+      path:     "/v1/speak?model=aura-arcas-en&encoding=mp3",
       method:   "POST",
       headers: {
         "Authorization":  `Token ${apiKey}`,

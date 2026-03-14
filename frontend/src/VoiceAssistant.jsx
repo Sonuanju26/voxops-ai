@@ -146,19 +146,21 @@ export default function VoiceAssistant() {
       const audio = new Audio(url)
       audioRef.current = audio
 
+      // Stop mic BEFORE playing — AI voice must not be captured
+      shouldListenRef.current = false
+      try { recognitionRef.current?.stop() } catch(_) {}
       audio.onended = () => {
         isSpeakingRef.current = false
         URL.revokeObjectURL(url)
         setMode("idle")
-        setTimeout(() => { if (shouldListenRef.current) startListening() }, 350)
+        setTimeout(() => { if (startListeningRef.current) startListeningRef.current() }, 800)
       }
-      audio.onerror = () => {
-        isSpeakingRef.current = false
-        setMode("idle")
-      }
+      audio.onerror = () => { isSpeakingRef.current = false; setMode("idle") }
       await audio.play()
     } catch(e) {
       console.error("TTS error:", e)
+      shouldListenRef.current = false
+      try { recognitionRef.current?.stop() } catch(_) {}
       // Browser TTS fallback
       const utt = new SpeechSynthesisUtterance(text)
       const effLang = lang === "auto" ? (detectedLang || "en") : lang
@@ -167,7 +169,7 @@ export default function VoiceAssistant() {
       utt.onend = () => {
         isSpeakingRef.current = false
         setMode("idle")
-        setTimeout(() => { if (shouldListenRef.current) startListeningRef.current?.() }, 350)
+        setTimeout(() => { if (startListeningRef.current) startListeningRef.current() }, 800)
       }
       window.speechSynthesis.speak(utt)
     }
@@ -243,6 +245,9 @@ export default function VoiceAssistant() {
       setMessages(prev => [...prev, { role:"ai", text:reply, time }])
       setMode("speaking")
       isSpeakingRef.current = true
+      // Kill mic the moment AI starts — before blob even plays
+      shouldListenRef.current = false
+      try { recognitionRef.current?.stop() } catch(_) {}
 
       // Play audio as soon as blob is ready
       const blob = await ttsPromise
@@ -254,7 +259,8 @@ export default function VoiceAssistant() {
           isSpeakingRef.current = false
           URL.revokeObjectURL(url)
           setMode("idle")
-          setTimeout(() => { if (shouldListenRef.current) startListeningRef.current?.() }, 300)
+          // 800ms gap after AI stops — ensures no echo captured
+          setTimeout(() => { if (startListeningRef.current) startListeningRef.current() }, 800)
         }
         audio.onerror = () => { isSpeakingRef.current = false; setMode("idle") }
         audio.play().catch(() => { isSpeakingRef.current = false; speak(reply) })
@@ -286,36 +292,30 @@ export default function VoiceAssistant() {
 
       let bargeDebounce = false
       let loudFrames = 0
-      const THRESHOLD = 15  // very sensitive — user just needs to speak normally
+      // High threshold — only trigger on loud deliberate speech, not speaker audio
+      // VAD barge-in disabled while AI is speaking to prevent self-capture
+      // Use orb tap for barge-in instead
+      const THRESHOLD = 40
 
       const checkVoice = () => {
         analyser.getByteFrequencyData(data)
-        // Focus on speech frequencies (300Hz-3000Hz) not full spectrum
         const speechData = data.slice(3, 30)
         const avg = speechData.reduce((a,b) => a+b,0) / speechData.length
 
-        if (avg > THRESHOLD) {
+        // Only count loud frames when mic is actually open (listening mode)
+        // Never trigger VAD barge-in while AI is speaking — prevents speaker feedback
+        if (avg > THRESHOLD && modeRef.current === "listening") {
           loudFrames++
         } else {
           loudFrames = Math.max(0, loudFrames - 1)
         }
 
-        // 2 consecutive loud frames while AI speaking = barge-in
-        if (loudFrames >= 2 && isSpeakingRef.current &&
-            modeRef.current === "speaking" && !bargeDebounce) {
+        // VAD barge-in only works when user is already in listening mode
+        // (orb tap barge-in handles the speaking→interrupt case)
+        if (loudFrames >= 3 && modeRef.current === "listening" && !bargeDebounce) {
           bargeDebounce = true
           loudFrames = 0
-          console.log("⚡ BARGE-IN! speech avg:", avg.toFixed(1))
-          stopAudio()
-          window.speechSynthesis.cancel()
-          setBargeCount(p => p+1)
-          setBargeFlash(true)
-          setTimeout(() => setBargeFlash(false), 500)
-          // Use ref to get latest startListening function
-          setTimeout(() => {
-            if (startListeningRef.current) startListeningRef.current()
-            setTimeout(() => { bargeDebounce = false }, 1000)
-          }, 200)
+          setTimeout(() => { bargeDebounce = false }, 1000)
         }
         vadTimerRef.current = requestAnimationFrame(checkVoice)
       }
